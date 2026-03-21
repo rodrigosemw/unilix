@@ -1,22 +1,9 @@
-name: Deploy VPS
+script: |
+  cd /home/ubuntu/app
 
-on:
-  push:
-    branches:
-      - main
+  git pull origin main
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: 163.176.173.187
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/ubuntu/app
-            git pull origin main
-            docker compose up -d --build
+  cd traefik && docker compose up -d --build
+  cd ../landing && docker compose up -d --build
+  cd ../painel && docker compose up -d --build
+  cd ../orchestrator && docker compose up -d --build
