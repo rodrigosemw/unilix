@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compra confirmada! — ListaFácil | Unilix</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --dark-bg: #0B0E1A;
+      --dark-surface: #12172B;
+      --dark-border: rgba(255, 255, 255, 0.08);
+      --primary: #5B5EF4;
+      --accent: #00D2FF;
+      --gradient: linear-gradient(135deg, #5B5EF4, #00D2FF);
+      --success: #10B981;
+      --white: #ffffff;
+      --text-light: rgba(255, 255, 255, 0.75);
+      --text-light-muted: rgba(255, 255, 255, 0.45);
+      --font: 'Plus Jakarta Sans', sans-serif;
+      --radius: 14px;
+      --radius-lg: 20px;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: var(--font);
+      background: var(--dark-bg);
+      color: var(--white);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; font-family: var(--font); border: none; }
+
+    /* ── BACKGROUND ── */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bg-layer::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 900px;
+      background: radial-gradient(ellipse at center,
+        rgba(91, 94, 244, 0.18) 0%,
+        rgba(0, 210, 255, 0.08) 45%,
+        transparent 70%
+      );
+      border-radius: 50%;
+    }
+
+    .bg-layer::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      right: -15%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(ellipse at center,
+        rgba(16, 185, 129, 0.1) 0%,
+        transparent 65%
+      );
+      border-radius: 50%;
+    }
+
+    /* Grid overlay */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 0%, transparent 80%);
+    }
+
+    /* ── NAV ── */
+    .nav {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 72px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .nav__logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.125rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.02em;
+    }
+
+    .unilix-logo-svg { width: 28px; height: 28px; }
+
+    /* ── MAIN ── */
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+    }
+
+    .success-wrap {
+      width: 100%;
+      max-width: 640px;
+      text-align: center;
+    }
+
+    /* ── CHECK ANIMATION ── */
+    .check-ring {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 32px;
+      position: relative;
+    }
+
+    .check-ring svg {
+      width: 96px;
+      height: 96px;
+    }
+
+    .check-ring__circle {
+      stroke: var(--success);
+      stroke-width: 3;
+      fill: none;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 283;
+      animation: drawCircle 0.6s ease forwards 0.2s;
+      transform-origin: center;
+      transform: rotate(-90deg);
+    }
+
+    .check-ring__check {
+      stroke: var(--success);
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 50;
+      stroke-dashoffset: 50;
+      animation: drawCheck 0.35s ease forwards 0.75s;
+    }
+
+    .check-ring__glow {
+      position: absolute;
+      inset: -16px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%);
+      animation: pulseGlow 2.5s ease-in-out infinite 1.2s;
+    }
+
+    @keyframes drawCircle {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* ── BADGE ── */
+    .plan-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      animation: fadeUp 0.5s ease forwards 0.1s;
+      opacity: 0;
+    }
+
+    .plan-badge__dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10B981;
+      animation: blink 1.4s ease infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── HEADLINE ── */
+    .success-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      animation: fadeUp 0.5s ease forwards 0.3s;
+      opacity: 0;
+    }
+
+    .success-title em {
+      font-style: normal;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .success-sub {
+      font-size: 1.0625rem;
+      line-height: 1.7;
+      color: var(--text-light);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      animation: fadeUp 0.5s ease forwards 0.45s;
+      opacity: 0;
+    }
+
+    /* ── INFO CARD ── */
+    .info-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      text-align: left;
+      animation: fadeUp 0.5s ease forwards 0.6s;
+      opacity: 0;
+    }
+
+    .info-card__title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-light-muted);
+      margin-bottom: 20px;
+    }
+
+    .info-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .info-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .info-step__num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .info-step__body strong {
+      display: block;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .info-step__body span {
+      font-size: 0.875rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    .info-step__divider {
+      width: 1px;
+      height: 16px;
+      background: rgba(255,255,255,0.1);
+      margin-left: 15px;
+    }
+
+    /* ── ACTIONS ── */
+    .success-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.5s ease forwards 0.75s;
+      opacity: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      transition: all 0.22s ease;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn:hover::before { opacity: 1; }
+
+    .btn-gradient {
+      background: var(--gradient);
+      color: var(--white);
+      box-shadow: 0 4px 20px rgba(91, 94, 244, 0.4);
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(91, 94, 244, 0.55);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .btn-lg { padding: 16px 36px; font-size: 1rem; border-radius: 12px; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.8125rem;
+      color: var(--text-light-muted);
+    }
+
+    footer a {
+      color: rgba(255,255,255,0.45);
+      transition: color 0.2s;
+    }
+
+    footer a:hover { color: var(--white); }
+
+    /* ── CONFETTI ── */
+    .confetti-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 540px) {
+      .info-card { padding: 20px; }
+      .success-actions { flex-direction: column; }
+      .success-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BG -->
+  <div class="bg-layer" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- Confetti container -->
+  <div class="confetti-container" id="confettiContainer" aria-hidden="true"></div>
+
+  <!-- NAV -->
+  <nav class="nav" aria-label="Navegação">
+    <a href="landing-unilix.html" class="nav__logo" aria-label="Unilix — página inicial">
+      <svg class="unilix-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M6 6 L6 20 Q6 26 16 26 Q26 26 26 20 L26 6" stroke="url(#logoGradS)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <circle cx="6" cy="5" r="3" fill="url(#logoGradS)"/>
+        <circle cx="26" cy="5" r="3" fill="url(#logoGradS)"/>
+        <circle cx="16" cy="26" r="3" fill="#00D2FF" opacity="0.85"/>
+        <defs>
+          <linearGradient id="logoGradS" x1="6" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#5B5EF4"/>
+            <stop offset="100%" stop-color="#00D2FF"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      Unilix
+    </a>
+  </nav>
+
+  <!-- MAIN -->
+  <main>
+    <div class="success-wrap">
+
+      <!-- Check animation -->
+      <div class="check-ring" aria-hidden="true">
+        <div class="check-ring__glow"></div>
+        <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <circle class="check-ring__circle" cx="48" cy="48" r="45"/>
+          <path class="check-ring__check" d="M30 48 L42 60 L66 36"/>
+        </svg>
+      </div>
+
+      <!-- Plan badge — updated via JS from URL param -->
+      <div class="plan-badge" id="planBadge">
+        <span class="plan-badge__dot"></span>
+        <span id="planBadgeText">Pagamento confirmado</span>
+      </div>
+
+      <h1 class="success-title">
+        Bem-vindo ao <em>ListaFácil</em>!
+      </h1>
+
+      <p class="success-sub" id="successSub">
+        Seu acesso está ativo. Em instantes você receberá um e-mail com todas as informações para começar.
+      </p>
+
+      <!-- Next steps card -->
+      <div class="info-card">
+        <p class="info-card__title">Próximos passos</p>
+        <div class="info-steps">
+
+          <div class="info-step">
+            <div class="info-step__num">1</div>
+            <div class="info-step__body">
+              <strong>Confirme seu e-mail</strong>
+              <span>Você receberá um link de acesso nos próximos minutos. Verifique também a caixa de spam.</span>
+            </div>
+          </div>
+
+          <div class="info-step__divider"></div>
+
+          <div class="info-step">
+            <div class="info-step__num">2</div>
+            <div class="info-step__body">
+              <strong>Acesse o painel</strong>
+              <span>Entre em <strong style="color:rgba(255,255,255,0.9)">app.unilix.com.br</strong> com suas credenciais e crie sua primeira lista em menos de 2 minutos.</span>
+            </div>
+          </div>
+
+          <div class="info-step__divider"></div>
+
+          <div class="info-step">
+            <div class="info-step__num">3</div>
+            <div class="info-step__body">
+              <strong>Convide sua equipe</strong>
+              <span>Compartilhe o link de convite com quem vai colaborar nas listas do seu estabelecimento.</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="success-actions">
+        <a href="https://app.unilix.com.br" class="btn btn-gradient btn-lg">
+          Acessar o painel
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="landing-listafacil.html" class="btn btn-ghost btn-lg">← Voltar ao ListaFácil</a>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>
+      Dúvidas? Fale com a gente em
+      <a href="mailto:contato@unilix.com.br">contato@unilix.com.br</a>
+      &nbsp;·&nbsp;
+      <a href="landing-unilix.html">unilix.tech</a>
+    </p>
+  </footer>
+
+  <script>
+    // ── READ PLAN FROM URL PARAM (Lemon Squeezy sends ?plan=pro etc.) ──────────
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get('plan') || params.get('checkout[custom][plan]');
+
+    const planLabels = {
+      starter: 'Plano Starter ativado',
+      pro:     'Plano Pro ativado 🎉',
+      gold:    'Plano Gold ativado ✨',
+    };
+
+    const planSubs = {
+      starter: 'Seu acesso gratuito está ativo. Em instantes você receberá um e-mail com todas as informações para começar.',
+      pro:     'Seu Plano Pro está ativo! Em instantes você receberá um e-mail com todas as informações para começar.',
+      gold:    'Seu Plano Gold está ativo! Prepare-se para controle total. Em instantes você receberá o e-mail de boas-vindas.',
+    };
+
+    if (plan && planLabels[plan]) {
+      document.getElementById('planBadgeText').textContent = planLabels[plan];
+      document.getElementById('successSub').textContent = planSubs[plan];
+    }
+
+    // ── CONFETTI ──────────────────────────────────────────────────────────────
+    const colors = ['#5B5EF4', '#00D2FF', '#10B981', '#F59E0B', '#EC4899', '#ffffff'];
+
+    function spawnConfetti(count) {
+      const container = document.getElementById('confettiContainer');
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const el = document.createElement('div');
+          el.className = 'confetti-piece';
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          const left = Math.random() * 100;
+          const duration = 2.2 + Math.random() * 2;
+          const size = 6 + Math.random() * 8;
+          const shapes = ['2px', '50%', '0'];
+          const shape = shapes[Math.floor(Math.random() * shapes.length)];
+          el.style.cssText = `
+            left: ${left}%;
+            background: ${color};
+            width: ${size}px;
+            height: ${size}px;
+            border-radius: ${shape};
+            animation-duration: ${duration}s;
+            animation-delay: ${Math.random() * 0.6}s;
+          `;
+          container.appendChild(el);
+          setTimeout(() => el.remove(), (duration + 1) * 1000);
+        }, i * 18);
+      }
+    }
+
+    // Fire confetti after check animation completes
+    setTimeout(() => spawnConfetti(90), 1000);
+
+    // ── PREVENT BACK TO CHECKOUT ──────────────────────────────────────────────
+    if (window.history && window.history.pushState) {
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', () => {
+        window.location.href = 'landing-listafacil.html';
+      });
+    }
+  </script>
+
+</body>
+</html>

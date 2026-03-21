@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>ContagemFácil</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2336;--border:rgba(255,255,255,0.08);
+  --text:#f0f2ff;--muted:rgba(255,255,255,0.45);--accent:#5B5EF4;--accent2:#00D2FF;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--orange:#f97316;
+  --fs-xs:11px;--fs-sm:13px;--fs-md:15px;--fs-lg:18px;--fs-xl:22px;
+  --font-body:'Plus Jakarta Sans',sans-serif;--radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);overflow-x:hidden}
+button{cursor:pointer;font-family:var(--font-body)}
+input,textarea,select{font-family:var(--font-body)}
+
+/* LAYOUT */
+.app{display:flex;flex-direction:column;height:100vh;max-width:700px;margin:0 auto}
+.topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer;flex-shrink:0}
+.topbar-name{font-size:var(--fs-sm);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.topbar-title{font-size:var(--fs-md);font-weight:700;flex:1;text-align:center;letter-spacing:-0.02em}
+.topbar-actions{display:flex;gap:6px;margin-left:auto}
+.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--text)}
+
+/* TABS */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:12px 8px;text-align:center;font-size:var(--fs-xs);font-weight:700;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-icon{font-size:1.1rem}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:16px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.card:hover{border-color:rgba(91,94,244,0.4)}
+.card-header{display:flex;align-items:center;gap:10px}
+.card-emoji{font-size:1.4rem;width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-info{flex:1;min-width:0}
+.card-title{font-size:var(--fs-md);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-sub{font-size:var(--fs-xs);color:var(--muted);margin-top:2px}
+.card-badge{font-size:var(--fs-xs);font-weight:700;padding:4px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.badge-blue{background:rgba(91,94,244,0.15);color:#a5b4fc}
+.badge-green{background:rgba(34,197,94,0.15);color:#4ade80}
+.badge-yellow{background:rgba(245,158,11,0.15);color:#fbbf24}
+.badge-red{background:rgba(239,68,68,0.15);color:#f87171}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;margin-top:8px}
+.section-title{font-size:var(--fs-sm);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--radius-sm);padding:10px 18px;font-size:var(--fs-sm);font-weight:700;color:white}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 16px;font-size:var(--fs-sm);font-weight:600;color:var(--text)}
+.btn-danger{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:9px 16px;font-size:var(--fs-sm);font-weight:600;color:var(--red)}
+
+/* SEARCH BAR */
+.search-bar{display:flex;gap:8px;margin-bottom:14px}
+.search-bar input{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:var(--fs-md);outline:none;transition:border-color .2s}
+.search-bar input:focus{border-color:var(--accent)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:700px;max-height:92vh;overflow-y:auto;padding:24px 20px 40px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:var(--fs-lg);font-weight:800;letter-spacing:-0.02em}
+.modal-close{width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem;color:var(--muted)}
+.form-group{margin-bottom:16px}
+.form-label{font-size:var(--fs-xs);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-size:var(--fs-md);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-textarea{min-height:80px;resize:vertical}
+
+/* CONTAGEM SCREEN */
+.contagem-screen{position:fixed;inset:0;background:var(--bg);z-index:150;display:flex;flex-direction:column;overflow:hidden}
+.contagem-topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
+.back-btn{font-size:var(--fs-sm);font-weight:600;color:var(--muted);display:flex;align-items:center;gap:4px;background:none;border:none;padding:6px 10px;border-radius:var(--radius-sm);background:var(--surface2)}
+.contagem-title{font-size:var(--fs-md);font-weight:700;flex:1;text-align:center}
+.contagem-body{flex:1;overflow-y:auto;padding:12px 16px}
+.contagem-bottom{padding:12px 16px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:10px;align-items:center}
+.btn-submit{flex:1;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--radius-sm);font-size:var(--fs-md);font-weight:700;color:white}
+
+/* CATEGORIA */
+.cat-section{margin-bottom:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cat-header{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;background:var(--surface2)}
+.cat-emoji{font-size:1.1rem}
+.cat-name{font-size:var(--fs-sm);font-weight:700;text-transform:uppercase;letter-spacing:0.04em;flex:1}
+.cat-count{font-size:var(--fs-xs);color:var(--muted)}
+.cat-toggle{font-size:0.8rem;color:var(--muted)}
+.cat-items{padding:8px}
+
+/* ITEM ROW */
+.item-row{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:var(--radius-sm);border-bottom:1px solid var(--border);transition:background .15s}
+.item-row:last-child{border-bottom:none}
+.item-row.alerta{background:rgba(239,68,68,0.05);border-left:3px solid var(--red)}
+.item-nome{flex:1;font-size:var(--fs-md);font-weight:500}
+.item-min{font-size:var(--fs-xs);color:var(--red);font-weight:600}
+.qty-input{width:72px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-size:var(--fs-md);text-align:center;outline:none;transition:border-color .2s}
+.qty-input:focus{border-color:var(--accent)}
+.qty-input.preenchido{border-color:var(--green)}
+.unidade{font-size:var(--fs-xs);color:var(--muted);min-width:28px;text-align:center}
+.obs-btn{width:30px;height:30px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);font-size:0.8rem;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0}
+.obs-btn.has-obs{border-color:var(--yellow);color:var(--yellow);background:rgba(245,158,11,0.1)}
+.obs-row{padding:4px 8px 10px 8px}
+.obs-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-size:var(--fs-sm);outline:none;transition:border-color .2s}
+.obs-input:focus{border-color:var(--yellow)}
+
+/* DETALHE SUBMISSION */
+.sub-detail{position:fixed;inset:0;background:var(--bg);z-index:160;display:flex;flex-direction:column}
+.sub-detail-body{flex:1;overflow-y:auto;padding:16px}
+.sub-item-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px}
+.sub-item-nome{flex:1;font-size:var(--fs-md);font-weight:500}
+.sub-item-qty{font-size:var(--fs-lg);font-weight:800;color:var(--accent)}
+.sub-item-unit{font-size:var(--fs-xs);color:var(--muted)}
+.sub-item-obs{font-size:var(--fs-xs);color:var(--yellow);margin-top:2px}
+.sub-item-alerta{font-size:var(--fs-xs);color:var(--red);font-weight:700}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.85);z-index:300;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px 28px;width:100%;max-width:380px}
+.login-logo{font-size:1.5rem;font-weight:900;text-align:center;margin-bottom:4px;letter-spacing:-0.03em}
+.login-sub{font-size:var(--fs-sm);color:var(--muted);text-align:center;margin-bottom:28px}
+.field-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;color:var(--text);font-size:var(--fs-md);outline:none;transition:border-color .2s;margin-bottom:12px}
+.field-input:focus{border-color:var(--accent)}
+.btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--radius-sm);font-size:var(--fs-md);font-weight:700;color:white;margin-top:4px}
+.login-error{color:var(--red);font-size:var(--fs-sm);text-align:center;margin-top:8px;display:none}
+
+/* USERS CHIP */
+.users-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:100px;font-size:var(--fs-xs);font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface2);transition:all .2s}
+.chip.selected{background:rgba(91,94,244,0.15);border-color:var(--accent);color:var(--accent)}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty-title{font-size:var(--fs-lg);font-weight:700;color:var(--text);margin-bottom:6px}
+.empty-sub{font-size:var(--fs-sm);line-height:1.6}
+
+/* ALERT BANNER */
+.alert-banner{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-sm);padding:10px 14px;font-size:var(--fs-sm);color:var(--red);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* PROGRESS */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .3s}
+
+/* COMPARACAO */
+.comp-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px}
+.comp-nome{flex:1;font-size:var(--fs-sm)}
+.comp-val{font-size:var(--fs-sm);font-weight:700;min-width:50px;text-align:right}
+.comp-diff{font-size:var(--fs-xs);font-weight:700;min-width:50px;text-align:right}
+.diff-up{color:var(--green)}
+.diff-down{color:var(--red)}
+.diff-same{color:var(--muted)}
+
+@media(max-width:480px){
+  .qty-input{width:60px}
+  .modal{border-radius:16px 16px 0 0}
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- SEM LOGIN — SSO via Hub -->
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted)">Carregando...</div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appMain" style="display:none">
+  <div class="topbar">
+    <div class="topbar-avatar" id="avatarBtn" onclick="toggleUserMenu()">👤</div>
+    <div>
+      <div style="font-size:11px;color:var(--muted)" id="topbarUser">-</div>
+      <div style="font-size:12px;font-weight:700" id="topbarWs">-</div>
+    </div>
+    <div class="topbar-title">📦 ContagemFácil</div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="window.location.href='/'" title="Hub">🏠</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tabContagens" onclick="setTab('contagens')">
+      <div class="tab-icon">📋</div>Contagens
+    </div>
+    <div class="tab" id="tabRecebidas" onclick="setTab('recebidas')">
+      <div class="tab-icon">📥</div>Recebidas
+    </div>
+    <div class="tab" id="tabHistorico" onclick="setTab('historico')">
+      <div class="tab-icon">🕐</div>Histórico
+    </div>
+    <div class="tab" id="tabAdmin" onclick="setTab('admin')" style="display:none">
+      <div class="tab-icon">⚙️</div>Admin
+    </div>
+  </div>
+  <div class="main" id="mainContent"></div>
+</div>
+
+<script>
+const SUPABASE_URL = '__SUPABASE_URL__';
+const SUPABASE_KEY = '__SUPABASE_KEY__';
+const CLIENTE_ID   = '__CLIENTE_ID__';
+const PLANO        = '__PLANO__';
+
+// ─── Estado global ───
+let CU = null, WS_DATA = null, WORKSPACE_ID = null;
+let allUsers = [], allCategories = [], allItems = [];
+let contagemTemplates = [], contagemSubmissions = [];
+let _curTab = 'contagens';
+let _contagemState = {}; // { itemId: { qty, obs } }
+let _obsOpen = {}; // { itemId: true/false }
+let _collapsedCats = {};
+
+// ─── Helpers ───
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const show = id => { const el=document.getElementById(id); if(el) el.style.display='flex'; };
+const hide = id => { const el=document.getElementById(id); if(el) el.style.display='none'; };
+const isAdmin = () => CU?.role === 'admin' || CU?.role === 'superadmin';
+const api = (path, opts={}) => fetch('/rest/v1/'+path, {
+  headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json', ...(opts.headers||{}) },
+  ...opts
+}).then(r => r.ok || r.status===201 ? r.json().catch(()=>[]) : r.json().then(e=>{throw e;}));
+const apiPost = (table, data, prefer='return=representation') => fetch('/rest/v1/'+table, {
+  method:'POST', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json','Prefer':prefer},
+  body: JSON.stringify(data)
+}).then(r=>r.json().catch(()=>[]));
+const apiPatch = (table, filter, data) => fetch('/rest/v1/'+table+'?'+filter, {
+  method:'PATCH', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=minimal'},
+  body: JSON.stringify(data)
+});
+const groupByCategory = items => {
+  const g = {};
+  items.forEach(i => { const k = i.category_id||'_sem'; if(!g[k]) g[k]=[]; g[k].push(i); });
+  return g;
+};
+
+// ─── Init ───
+async function init() {
+  show('loadingOverlay');
+  // SSO do Hub
+  const wsId = localStorage.getItem('lf_workspace');
+  if (wsId) {
+    const saved = localStorage.getItem('lf_u_'+wsId);
+    if (saved) {
+      try {
+        const {login} = JSON.parse(saved);
+        const users = await api('users?select=*&login=eq.'+encodeURIComponent(login)+'&workspace_id=eq.'+wsId+'&limit=1');
+        if (Array.isArray(users) && users.length) {
+          CU = users[0]; WORKSPACE_ID = wsId;
+          await afterLogin(); return;
+        }
+      } catch(e){}
+    }
+  }
+  hide('loadingOverlay');
+  // Sem SSO — redireciona para o Hub
+  window.location.href = '/';
+}
+
+async function _login() {
+  const login = document.getElementById('loginUser').value.trim();
+  const senha = document.getElementById('loginPass').value;
+  document.getElementById('loginError').style.display = 'none';
+  if (!login||!senha) return;
+  try {
+    // Busca workspace
+    const ws = await api('workspaces?select=*&limit=1');
+    if (!Array.isArray(ws)||!ws.length) { showLoginError('Workspace não encontrado'); return; }
+    WORKSPACE_ID = ws[0].id;
+    const users = await api('users?select=*&login=eq.'+encodeURIComponent(login)+'&workspace_id=eq.'+WORKSPACE_ID+'&limit=1');
+    if (!Array.isArray(users)||!users.length) { showLoginError('Login ou senha incorretos'); return; }
+    const u = users[0];
+    // Verificar senha — texto puro ou bcrypt
+    let ok = false;
+    if (u.senha === senha) { ok = true; }
+    else if (u.senha && u.senha.startsWith('$2')) {
+      // hash bcrypt — usa endpoint de verificação ou simplesmente nega
+      ok = false;
+    }
+    if (!ok) { showLoginError('Login ou senha incorretos'); return; }
+    CU = u;
+    localStorage.setItem('lf_workspace', WORKSPACE_ID);
+    localStorage.setItem('lf_u_'+WORKSPACE_ID, JSON.stringify({login}));
+    await afterLogin();
+  } catch(e) { showLoginError('Erro de conexão'); }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.style.display = 'block';
+  hide('loadingOverlay');
+}
+
+async function afterLogin() {
+  show('loadingOverlay');
+  try {
+    const [wsArr, usersArr, catsArr, itemsArr, tmplArr, subArr] = await Promise.all([
+      api('workspaces?select=*&id=eq.'+WORKSPACE_ID+'&limit=1'),
+      api('users?select=*&workspace_id=eq.'+WORKSPACE_ID),
+      api('categories?select=*&workspace_id=eq.'+WORKSPACE_ID+'&order=ordem'),
+      api('items?select=*&workspace_id=eq.'+WORKSPACE_ID),
+      api('contagem_templates?select=*&workspace_id=eq.'+WORKSPACE_ID+'&order=created_at'),
+      api('contagem_submissions?select=*&workspace_id=eq.'+WORKSPACE_ID+'&order=created_at.desc&limit=100'),
+    ]);
+    WS_DATA = wsArr[0]; allUsers = usersArr||[]; allCategories = catsArr||[];
+    allItems = itemsArr||[]; contagemTemplates = tmplArr||[]; contagemSubmissions = subArr||[];
+    WORKSPACE_ID = WS_DATA.id;
+    // Topbar
+    document.getElementById('topbarUser').textContent = CU.nome||CU.login;
+    document.getElementById('topbarWs').textContent = WS_DATA.app_name||'';
+    document.getElementById('avatarBtn').textContent = CU.avatar||'👤';
+    if (isAdmin()) document.getElementById('tabAdmin').style.display = 'flex';
+    hide('loginScreen'); hide('loadingOverlay');
+    document.getElementById('appMain').style.display = 'flex';
+    renderTab();
+  } catch(e) {
+    console.error(e);
+    hide('loadingOverlay');
+    show('loginScreen');
+  }
+}
+
+// ─── Tabs ───
+function setTab(tab) {
+  _curTab = tab;
+  ['contagens','recebidas','historico','admin'].forEach(t => {
+    const el = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if (el) el.classList.toggle('active', t===tab);
+  });
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('mainContent');
+  if (_curTab==='contagens') el.innerHTML = renderContagens();
+  else if (_curTab==='recebidas') el.innerHTML = renderRecebidas();
+  else if (_curTab==='historico') el.innerHTML = renderHistorico();
+  else if (_curTab==='admin') el.innerHTML = renderAdmin();
+}
+
+// ─── TAB CONTAGENS ───
+function renderContagens() {
+  const minhas = contagemTemplates.filter(t =>
+    isAdmin() || (t.allowed_users||[]).includes(CU.login)
+  );
+  if (!minhas.length) return `<div class="empty"><div class="empty-icon">📦</div><div class="empty-title">Nenhuma contagem</div><div class="empty-sub">Nenhuma contagem foi atribuída a você ainda.</div></div>`;
+  return `
+    <div class="section-header" style="margin-top:0">
+      <div class="section-title">Minhas Contagens</div>
+    </div>
+    ${minhas.map(t => {
+      const pendentes = contagemSubmissions.filter(s => s.template_id===t.id && (s.sent_to||[]).includes(CU.login) && s.status==='enviada').length;
+      return `<div class="card" onclick="abrirContagem('${t.id}')">
+        <div class="card-header">
+          <div class="card-emoji">${t.emoji||'📦'}</div>
+          <div class="card-info">
+            <div class="card-title">${esc(t.titulo)}</div>
+            <div class="card-sub">${(t.items||[]).length} itens · Toque para contar</div>
+          </div>
+          ${pendentes?`<div class="card-badge badge-yellow">📥 ${pendentes} nova${pendentes>1?'s':''}</div>`:`<div class="card-badge badge-blue">${(t.items||[]).length} itens</div>`}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ─── TAB RECEBIDAS ───
+function renderRecebidas() {
+  const recebidas = contagemSubmissions.filter(s =>
+    isAdmin() || (s.sent_to||[]).includes(CU.login)
+  );
+  if (!recebidas.length) return `<div class="empty"><div class="empty-icon">📥</div><div class="empty-title">Nenhuma contagem recebida</div><div class="empty-sub">As contagens enviadas pela equipe aparecerão aqui.</div></div>`;
+  return `
+    <div class="section-header" style="margin-top:0">
+      <div class="section-title">Contagens Recebidas</div>
+    </div>
+    ${recebidas.map(s => {
+      const total = (s.items||[]).length;
+      const preenchidos = (s.items||[]).filter(i=>i.qty!==undefined&&i.qty!==null&&i.qty!=='').length;
+      const pct = total ? Math.round(preenchidos/total*100) : 0;
+      const tmpl = contagemTemplates.find(t=>t.id===s.template_id);
+      return `<div class="card" onclick="verDetalhe('${s.id}')">
+        <div class="card-header">
+          <div class="card-emoji">${tmpl?.emoji||'📦'}</div>
+          <div class="card-info">
+            <div class="card-title">${esc(s.titulo||tmpl?.titulo||'Contagem')}</div>
+            <div class="card-sub">De: ${esc(s.submitted_by)} · ${new Date(s.created_at).toLocaleDateString('pt-BR')} ${new Date(s.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="card-badge ${s.status==='concluida'?'badge-green':'badge-yellow'}">${s.status==='concluida'?'✅ Concluída':'📥 Recebida'}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ─── TAB HISTÓRICO ───
+function renderHistorico() {
+  const minhas = contagemSubmissions.filter(s => s.submitted_by===CU.login);
+  if (!minhas.length) return `<div class="empty"><div class="empty-icon">🕐</div><div class="empty-title">Nenhum histórico</div><div class="empty-sub">Suas contagens enviadas aparecerão aqui.</div></div>`;
+  return `
+    <div class="section-header" style="margin-top:0">
+      <div class="section-title">Minhas Contagens Enviadas</div>
+    </div>
+    ${minhas.map(s => {
+      const tmpl = contagemTemplates.find(t=>t.id===s.template_id);
+      const total = (s.items||[]).length;
+      const comObs = (s.items||[]).filter(i=>i.obs).length;
+      return `<div class="card" onclick="verDetalhe('${s.id}')">
+        <div class="card-header">
+          <div class="card-emoji">${tmpl?.emoji||'📦'}</div>
+          <div class="card-info">
+            <div class="card-title">${esc(s.titulo||tmpl?.titulo||'Contagem')}</div>
+            <div class="card-sub">${total} itens${comObs?` · ${comObs} obs`:''}  · ${new Date(s.created_at).toLocaleDateString('pt-BR')}</div>
+          </div>
+          <div class="card-badge ${s.status==='concluida'?'badge-green':'badge-yellow'}">${s.status==='concluida'?'✅':'📤 Enviada'}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ─── TAB ADMIN ───
+let _adminAba = 'templates';
+function renderAdmin() {
+  if (!isAdmin()) return '';
+  return `
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="setAdminAba('templates')" id="adminAbaTemplates"
+        style="flex:1;padding:10px;font-size:13px;font-weight:700;border:none;border-radius:var(--radius-sm);cursor:pointer;background:${_adminAba==='templates'?'var(--accent)':'var(--surface2)'};color:${_adminAba==='templates'?'white':'var(--muted)'}">
+        📋 Templates
+      </button>
+      <button onclick="setAdminAba('catalogo')" id="adminAbaCatalogo"
+        style="flex:1;padding:10px;font-size:13px;font-weight:700;border:none;border-radius:var(--radius-sm);cursor:pointer;background:${_adminAba==='catalogo'?'var(--accent)':'var(--surface2)'};color:${_adminAba==='catalogo'?'white':'var(--muted)'}">
+        📦 Catálogo
+      </button>
+    </div>
+    ${_adminAba==='templates' ? renderAdminTemplates() : renderAdminCatalogo()}
+  `;
+}
+
+function setAdminAba(aba) {
+  _adminAba = aba;
+  document.getElementById('mainContent').innerHTML = renderAdmin();
+}
+
+function renderAdminTemplates() {
+  return `
+    <div class="section-header" style="margin-top:0">
+      <div class="section-title">Templates de Contagem</div>
+      <button class="btn-primary" onclick="novoTemplate()">+ Nova</button>
+    </div>
+    ${contagemTemplates.length ? contagemTemplates.map(t => `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-emoji">${t.emoji||'📦'}</div>
+          <div class="card-info">
+            <div class="card-title">${esc(t.titulo)}</div>
+            <div class="card-sub">${(t.items||[]).length} itens · ${(t.allowed_users||[]).length} usuários</div>
+          </div>
+          <button class="btn-ghost" style="font-size:12px;padding:7px 12px" onclick="editarTemplate('${t.id}');event.stopPropagation()">✏️ Editar</button>
+        </div>
+      </div>`).join('') : `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nenhum template</div><div class="empty-sub">Crie o primeiro template de contagem.</div></div>`}
+  `;
+}
+
+function renderAdminCatalogo() {
+  const _catSearch = '';
+  return `
+    <div class="section-header" style="margin-top:0">
+      <div class="section-title">Categorias</div>
+      <button class="btn-primary" onclick="novaCategoria()">+ Categoria</button>
+    </div>
+    <div style="margin-bottom:16px">
+      ${allCategories.length ? allCategories.map(cat => `
+        <div class="card" style="margin-bottom:6px">
+          <div class="card-header">
+            <div class="card-emoji">${cat.emoji||'📦'}</div>
+            <div class="card-info">
+              <div class="card-title">${esc(cat.nome)}</div>
+              <div class="card-sub">${allItems.filter(i=>i.category_id===cat.id).length} produtos</div>
+            </div>
+            <button class="btn-ghost" style="font-size:12px;padding:6px 10px" onclick="editarCategoria('${cat.id}')">✏️</button>
+            <button class="btn-danger" style="font-size:12px;padding:6px 10px;margin-left:4px" onclick="deletarCategoria('${cat.id}')">🗑️</button>
+          </div>
+        </div>`).join('') : `<div class="empty"><div class="empty-icon">🏷️</div><div class="empty-title">Nenhuma categoria</div></div>`}
+    </div>
+    <div class="section-header">
+      <div class="section-title">Produtos</div>
+      <button class="btn-primary" onclick="novoProduto()">+ Produto</button>
+    </div>
+    <div class="search-bar" style="margin-bottom:12px">
+      <input type="search" id="catSearchInput" placeholder="🔍 Buscar produto..." 
+        oninput="filtrarCatalogo(this.value)" autocomplete="off">
+    </div>
+    <div id="catalogoLista">
+      ${renderListaProdutos('')}
+    </div>
+  `;
+}
+
+function renderListaProdutos(q) {
+  const items = q ? allItems.filter(i=>i.nome.toLowerCase().includes(q.toLowerCase())) : allItems;
+  const sorted = [...items].sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+  if (!sorted.length) return `<div class="empty"><div class="empty-icon">📦</div><div class="empty-title">Nenhum produto</div></div>`;
+  return sorted.map(item => {
+    const cat = allCategories.find(c=>c.id===item.category_id);
+    return `<div class="card" style="margin-bottom:6px">
+      <div class="card-header">
+        <div class="card-emoji">${cat?.emoji||'📦'}</div>
+        <div class="card-info">
+          <div class="card-title">${esc(item.nome)}</div>
+          <div class="card-sub">${esc(cat?.nome||'Sem categoria')} · ${esc(item.unidade||'un')}${item.estoque_minimo?` · Mín: ${item.estoque_minimo}`:''}${item.preco_custo?` · R$ ${item.preco_custo}`:''}</div>
+        </div>
+        <button class="btn-ghost" style="font-size:12px;padding:6px 10px" onclick="editarProduto('${item.id}')">✏️</button>
+        <button class="btn-danger" style="font-size:12px;padding:6px 10px;margin-left:4px" onclick="deletarProduto('${item.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarCatalogo(q) {
+  document.getElementById('catalogoLista').innerHTML = renderListaProdutos(q);
+}
+
+// ─── CRUD CATEGORIAS ───
+function novaCategoria() { abrirModalCategoria(null); }
+function editarCategoria(id) { abrirModalCategoria(allCategories.find(c=>c.id===id)); }
+
+function abrirModalCategoria(cat) {
+  const isEdit = !!cat;
+  const html = `
+    <div class="modal-overlay" id="modalCat" onclick="if(event.target===this)fecharModal('modalCat')">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">${isEdit?'Editar':'Nova'} Categoria</div>
+          <button class="modal-close" onclick="fecharModal('modalCat')">✕</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Emoji</label>
+          <input class="form-input" id="catEmoji" value="${esc(cat?.emoji||'📦')}" maxlength="2" style="width:70px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-input" id="catNome" placeholder="Ex: Hortifruti" value="${esc(cat?.nome||'')}">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          ${isEdit?`<button class="btn-danger" onclick="deletarCategoria('${cat.id}');fecharModal('modalCat')">🗑️</button>`:''}
+          <button class="btn-primary" style="flex:1" onclick="salvarCategoria(${isEdit?`'${cat.id}'`:'null'})">
+            ${isEdit?'Salvar':'Criar'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function salvarCategoria(id) {
+  const nome = document.getElementById('catNome').value.trim();
+  const emoji = document.getElementById('catEmoji').value.trim()||'📦';
+  if (!nome) { toast('Informe o nome!'); return; }
+  show('loadingOverlay');
+  try {
+    if (id) {
+      await apiPatch('categories','id=eq.'+id,{nome,emoji});
+      const c = allCategories.find(c=>c.id===id);
+      if (c) { c.nome=nome; c.emoji=emoji; }
+    } else {
+      const res = await apiPost('categories',{workspace_id:WORKSPACE_ID,nome,emoji,ordem:allCategories.length});
+      allCategories.push(Array.isArray(res)?res[0]:res);
+    }
+    fecharModal('modalCat');
+    hide('loadingOverlay');
+    setAdminAba('catalogo');
+    toast(id?'Categoria atualizada!':'Categoria criada! ✅');
+  } catch(e) { hide('loadingOverlay'); toast('Erro!'); }
+}
+
+async function deletarCategoria(id) {
+  if (!confirm('Excluir esta categoria? Os produtos perderão a categoria.')) return;
+  show('loadingOverlay');
+  await fetch('/rest/v1/categories?id=eq.'+id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  allCategories = allCategories.filter(c=>c.id!==id);
+  allItems.forEach(i=>{ if(i.category_id===id) i.category_id=null; });
+  fecharModal('modalCat');
+  hide('loadingOverlay');
+  setAdminAba('catalogo');
+  toast('Categoria excluída!');
+}
+
+// ─── CRUD PRODUTOS ───
+function novoProduto() { abrirModalProduto(null); }
+function editarProduto(id) { abrirModalProduto(allItems.find(i=>i.id===id)); }
+
+function abrirModalProduto(item) {
+  const isEdit = !!item;
+  const html = `
+    <div class="modal-overlay" id="modalProd" onclick="if(event.target===this)fecharModal('modalProd')">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">${isEdit?'Editar':'Novo'} Produto</div>
+          <button class="modal-close" onclick="fecharModal('modalProd')">✕</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-input" id="prodNome" placeholder="Ex: Abacate" value="${esc(item?.nome||'')}">
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Unidade</label>
+            <input class="form-input" id="prodUnidade" placeholder="un, kg, L..." value="${esc(item?.unidade||'un')}">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Qtd padrão</label>
+            <input class="form-input" id="prodQty" type="number" min="0" step="0.01" value="${item?.quantidade_padrao||1}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-input" id="prodCat">
+            <option value="">Sem categoria</option>
+            ${allCategories.map(c=>`<option value="${c.id}" ${item?.category_id===c.id?'selected':''}>${c.emoji||'📦'} ${esc(c.nome)}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Estoque mínimo</label>
+            <input class="form-input" id="prodMin" type="number" min="0" step="0.01" value="${item?.estoque_minimo||0}" placeholder="0">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Preço custo</label>
+            <input class="form-input" id="prodPreco" type="number" min="0" step="0.01" value="${item?.preco_custo||0}" placeholder="0.00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fornecedor</label>
+          <input class="form-input" id="prodFornecedor" placeholder="Nome do fornecedor" value="${esc(item?.fornecedor||'')}">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          ${isEdit?`<button class="btn-danger" onclick="deletarProduto('${item.id}');fecharModal('modalProd')">🗑️</button>`:''}
+          <button class="btn-primary" style="flex:1" onclick="salvarProduto(${isEdit?`'${item.id}'`:'null'})">
+            ${isEdit?'Salvar':'Criar'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function salvarProduto(id) {
+  const nome = document.getElementById('prodNome').value.trim();
+  const unidade = document.getElementById('prodUnidade').value.trim()||'un';
+  const category_id = document.getElementById('prodCat').value||null;
+  const quantidade_padrao = parseFloat(document.getElementById('prodQty').value)||1;
+  const estoque_minimo = parseFloat(document.getElementById('prodMin').value)||0;
+  const preco_custo = parseFloat(document.getElementById('prodPreco').value)||0;
+  const fornecedor = document.getElementById('prodFornecedor').value.trim();
+  if (!nome) { toast('Informe o nome!'); return; }
+  show('loadingOverlay');
+  try {
+    if (id) {
+      await apiPatch('items','id=eq.'+id,{nome,unidade,category_id,quantidade_padrao,estoque_minimo,preco_custo,fornecedor});
+      const i = allItems.find(i=>i.id===id);
+      if (i) Object.assign(i,{nome,unidade,category_id,quantidade_padrao,estoque_minimo,preco_custo,fornecedor});
+    } else {
+      const res = await apiPost('items',{workspace_id:WORKSPACE_ID,nome,unidade,category_id,quantidade_padrao,estoque_minimo,preco_custo,fornecedor});
+      allItems.push(Array.isArray(res)?res[0]:res);
+    }
+    fecharModal('modalProd');
+    hide('loadingOverlay');
+    setAdminAba('catalogo');
+    toast(id?'Produto atualizado!':'Produto criado! ✅');
+  } catch(e) { hide('loadingOverlay'); toast('Erro: '+JSON.stringify(e)); }
+}
+
+async function deletarProduto(id) {
+  if (!confirm('Excluir este produto?')) return;
+  show('loadingOverlay');
+  await fetch('/rest/v1/items?id=eq.'+id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  allItems = allItems.filter(i=>i.id!==id);
+  fecharModal('modalProd');
+  hide('loadingOverlay');
+  setAdminAba('catalogo');
+  toast('Produto excluído!');
+}
+
+// ─── ABRIR CONTAGEM ───
+function abrirContagem(templateId) {
+  const tmpl = contagemTemplates.find(t=>t.id===templateId);
+  if (!tmpl) return;
+  _contagemState = {};
+  _obsOpen = {};
+  _collapsedCats = {};
+  const items = tmpl.items||[];
+  // Verificar alertas
+  const alertas = items.filter(i => {
+    const item = allItems.find(ai=>ai.id===i.id);
+    return item && item.estoque_minimo > 0 && item.estoque_atual <= item.estoque_minimo;
+  });
+  const html = `
+    <div class="contagem-screen" id="contagemScreen">
+      <div class="contagem-topbar">
+        <button class="back-btn" onclick="fecharContagem()">← Voltar</button>
+        <div class="contagem-title">${tmpl.emoji||'📦'} ${esc(tmpl.titulo)}</div>
+        <button class="icon-btn" onclick="exportarPDF('${templateId}')">📄</button>
+      </div>
+      <div class="contagem-body" id="contagemBody">
+        ${alertas.length ? `<div class="alert-banner">⚠️ ${alertas.length} item${alertas.length>1?'ns':''} abaixo do estoque mínimo</div>` : ''}
+        <div class="search-bar" style="margin-bottom:12px">
+          <input type="search" id="contagemSearch" placeholder="🔍 Buscar item..." oninput="filtrarContagem(this.value)" autocomplete="off">
+        </div>
+        ${renderContagemItens(items)}
+      </div>
+      <div class="contagem-bottom">
+        <div style="font-size:12px;color:var(--muted)" id="contagemCounter">0 preenchidos</div>
+        <button class="btn-submit" onclick="enviarContagem('${templateId}')">📤 Enviar Contagem</button>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function renderContagemItens(items) {
+  const byCat = groupByCategory(items);
+  return Object.keys(byCat).map(catId => {
+    const catItems = byCat[catId];
+    const cat = allCategories.find(c=>c.id===catId);
+    const key = 'cat_'+catId;
+    const collapsed = _collapsedCats[key];
+    return `<div class="cat-section" data-key="${key}">
+      <div class="cat-header" onclick="toggleCat('${key}')">
+        <span class="cat-emoji">${cat?.emoji||'📦'}</span>
+        <span class="cat-name">${esc(cat?.nome||'Sem Categoria')}</span>
+        <span class="cat-count">${catItems.length}</span>
+        <span class="cat-toggle">${collapsed?'▶':'▼'}</span>
+      </div>
+      ${collapsed?'':`<div class="cat-items">${catItems.map(i=>renderItemRow(i)).join('')}</div>`}
+    </div>`;
+  }).join('');
+}
+
+function renderItemRow(i) {
+  const item = allItems.find(ai=>ai.id===i.id)||i;
+  const state = _contagemState[i.id]||{};
+  const alerta = item.estoque_minimo > 0 && item.estoque_atual <= item.estoque_minimo;
+  const obsAberta = _obsOpen[i.id];
+  const temObs = !!state.obs;
+  return `<div class="item-row ${alerta?'alerta':''}" id="irow_${i.id}">
+    <div style="flex:1;min-width:0">
+      <div class="item-nome">${esc(i.nome||item.nome)}</div>
+      ${alerta?`<div class="item-min">⚠️ Mínimo: ${item.estoque_minimo} ${item.unidade||''}</div>`:''}
+    </div>
+    <input type="number" min="0" step="0.01" class="qty-input ${state.qty!==undefined&&state.qty!==''?'preenchido':''}" 
+      id="qty_${i.id}" value="${state.qty!==undefined?state.qty:''}" 
+      placeholder="0" 
+      oninput="atualizarQty('${i.id}',this.value)"
+      onclick="event.stopPropagation()">
+    <span class="unidade">${esc(i.unidade||item.unidade||'un')}</span>
+    <button class="obs-btn ${temObs?'has-obs':''}" id="obsbtn_${i.id}" 
+      onclick="toggleObs('${i.id}')" title="Observação">💬</button>
+  </div>
+  ${obsAberta?`<div class="obs-row" id="obsrow_${i.id}">
+    <input class="obs-input" type="text" placeholder="Observação sobre este item..." 
+      value="${esc(state.obs||'')}" 
+      oninput="atualizarObs('${i.id}',this.value)"
+      onclick="event.stopPropagation()">
+  </div>`:''}`;
+}
+
+function toggleCat(key) {
+  _collapsedCats[key] = !_collapsedCats[key];
+  const sec = document.querySelector(`.cat-section[data-key="${key}"]`);
+  if (!sec) return;
+  const toggle = sec.querySelector('.cat-toggle');
+  const items = sec.querySelector('.cat-items');
+  if (_collapsedCats[key]) {
+    if (items) items.remove();
+    if (toggle) toggle.textContent = '▶';
+  } else {
+    if (toggle) toggle.textContent = '▼';
+    const header = sec.querySelector('.cat-header');
+    // Encontrar itens da categoria
+    const catId = key.replace('cat_','');
+    const tmplId = document.querySelector('.contagem-screen .btn-submit')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    const tmpl = contagemTemplates.find(t=>t.id===tmplId);
+    const catItems = (tmpl?.items||[]).filter(i=>(i.category_id||'_sem')===catId);
+    const div = document.createElement('div');
+    div.className = 'cat-items';
+    div.innerHTML = catItems.map(i=>renderItemRow(i)).join('');
+    sec.appendChild(div);
+  }
+}
+
+function atualizarQty(itemId, val) {
+  if (!_contagemState[itemId]) _contagemState[itemId] = {};
+  _contagemState[itemId].qty = val;
+  const input = document.getElementById('qty_'+itemId);
+  if (input) input.classList.toggle('preenchido', val!=='');
+  atualizarCounter();
+}
+
+function atualizarObs(itemId, val) {
+  if (!_contagemState[itemId]) _contagemState[itemId] = {};
+  _contagemState[itemId].obs = val;
+  const btn = document.getElementById('obsbtn_'+itemId);
+  if (btn) { btn.classList.toggle('has-obs', !!val); }
+}
+
+function toggleObs(itemId) {
+  _obsOpen[itemId] = !_obsOpen[itemId];
+  const row = document.getElementById('irow_'+itemId);
+  if (!row) return;
+  const existing = document.getElementById('obsrow_'+itemId);
+  if (existing) existing.remove();
+  if (_obsOpen[itemId]) {
+    const state = _contagemState[itemId]||{};
+    const div = document.createElement('div');
+    div.className = 'obs-row'; div.id = 'obsrow_'+itemId;
+    div.innerHTML = `<input class="obs-input" type="text" placeholder="Observação sobre este item..." value="${esc(state.obs||'')}" oninput="atualizarObs('${itemId}',this.value)" onclick="event.stopPropagation()">`;
+    row.insertAdjacentElement('afterend', div);
+  }
+  const btn = document.getElementById('obsbtn_'+itemId);
+  if (btn) btn.classList.toggle('has-obs', !!(_contagemState[itemId]?.obs));
+}
+
+function atualizarCounter() {
+  const preenchidos = Object.values(_contagemState).filter(s=>s.qty!==undefined&&s.qty!=='').length;
+  const el = document.getElementById('contagemCounter');
+  if (el) el.textContent = preenchidos+' preenchido'+(preenchidos!==1?'s':'');
+}
+
+function filtrarContagem(q) {
+  const query = q.toLowerCase().trim();
+  document.querySelectorAll('#contagemBody .item-row').forEach(row => {
+    const nome = row.querySelector('.item-nome')?.textContent?.toLowerCase()||'';
+    row.style.display = !query||nome.includes(query)?'':'none';
+  });
+  document.querySelectorAll('#contagemBody .cat-section').forEach(sec => {
+    const vis = Array.from(sec.querySelectorAll('.item-row')).some(r=>r.style.display!=='none');
+    sec.style.display = vis?'':'none';
+  });
+}
+
+function fecharContagem() {
+  document.getElementById('contagemScreen')?.remove();
+}
+
+async function enviarContagem(templateId) {
+  const tmpl = contagemTemplates.find(t=>t.id===templateId);
+  if (!tmpl) return;
+  const items = (tmpl.items||[]).map(i => ({
+    ...i,
+    qty: _contagemState[i.id]?.qty ?? '',
+    obs: _contagemState[i.id]?.obs || ''
+  }));
+  const titulo = (tmpl.titulo||'Contagem')+' — '+new Date().toLocaleDateString('pt-BR');
+  show('loadingOverlay');
+  try {
+    const sub = await apiPost('contagem_submissions', {
+      workspace_id: WORKSPACE_ID,
+      template_id: templateId,
+      titulo, submitted_by: CU.login,
+      sent_to: tmpl.receivers||[],
+      status: 'enviada', items
+    });
+    contagemSubmissions.unshift(Array.isArray(sub)?sub[0]:sub);
+    hide('loadingOverlay');
+    fecharContagem();
+    setTab('historico');
+    toast('Contagem enviada! ✅');
+  } catch(e) {
+    hide('loadingOverlay');
+    toast('Erro ao enviar: '+JSON.stringify(e));
+  }
+}
+
+// ─── VER DETALHE ───
+async function verDetalhe(subId) {
+  show('loadingOverlay');
+  let sub = contagemSubmissions.find(s=>s.id===subId);
+  if (!sub) {
+    const arr = await api('contagem_submissions?select=*&id=eq.'+subId+'&limit=1');
+    sub = arr[0];
+  }
+  hide('loadingOverlay');
+  if (!sub) return;
+  const tmpl = contagemTemplates.find(t=>t.id===sub.template_id);
+  const items = sub.items||[];
+  const alertas = items.filter(i=>{
+    const item = allItems.find(ai=>ai.id===i.id);
+    return item && item.estoque_minimo>0 && parseFloat(i.qty||0)<=item.estoque_minimo;
+  });
+  // Buscar contagem anterior para comparação
+  const anteriores = contagemSubmissions.filter(s=>s.template_id===sub.template_id && s.id!==subId && s.submitted_by===sub.submitted_by).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  const anterior = anteriores[0];
+  const html = `
+    <div class="sub-detail" id="subDetail">
+      <div class="contagem-topbar">
+        <button class="back-btn" onclick="document.getElementById('subDetail').remove()">← Voltar</button>
+        <div class="contagem-title">${tmpl?.emoji||'📦'} ${esc(sub.titulo||tmpl?.titulo||'Contagem')}</div>
+        <button class="icon-btn" onclick="exportarSubPDF('${subId}')">📄</button>
+      </div>
+      <div class="sub-detail-body">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          De: <strong>${esc(sub.submitted_by)}</strong> · ${new Date(sub.created_at).toLocaleDateString('pt-BR')} ${new Date(sub.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+        </div>
+        ${alertas.length?`<div class="alert-banner">⚠️ ${alertas.length} item${alertas.length>1?'ns':''} abaixo do mínimo</div>`:''}
+        ${anterior?`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--muted)">
+          Comparando com contagem de ${new Date(anterior.created_at).toLocaleDateString('pt-BR')}
+        </div>`:''}
+        ${renderDetalheItens(items, anterior)}
+        ${isAdmin()?`<div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn-ghost" style="flex:1" onclick="concluirContagem('${subId}')">✅ Concluir</button>
+        </div>`:''}
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function renderDetalheItens(items, anterior) {
+  const byCat = groupByCategory(items);
+  return Object.keys(byCat).map(catId => {
+    const catItems = byCat[catId];
+    const cat = allCategories.find(c=>c.id===catId);
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;padding:0 2px">${cat?.emoji||'📦'} ${esc(cat?.nome||'Sem Categoria')}</div>
+      ${catItems.map(i => {
+        const antItem = anterior?(anterior.items||[]).find(ai=>ai.id===i.id):null;
+        const diff = antItem&&i.qty!==''&&antItem.qty!=='' ? parseFloat(i.qty||0)-parseFloat(antItem.qty||0) : null;
+        const item = allItems.find(ai=>ai.id===i.id)||i;
+        const alerta = item.estoque_minimo>0 && parseFloat(i.qty||0)<=item.estoque_minimo;
+        return `<div class="sub-item-row ${alerta?'alerta':''}">
+          <div style="flex:1;min-width:0">
+            <div class="sub-item-nome">${esc(i.nome)}</div>
+            ${i.obs?`<div class="sub-item-obs">💬 ${esc(i.obs)}</div>`:''}
+            ${alerta?`<div class="sub-item-alerta">⚠️ Abaixo do mínimo (${item.estoque_minimo} ${item.unidade||''})</div>`:''}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div><span class="sub-item-qty">${i.qty!==''&&i.qty!==undefined?i.qty:'—'}</span> <span class="sub-item-unit">${esc(i.unidade||item.unidade||'un')}</span></div>
+            ${diff!==null?`<div class="comp-diff ${diff>0?'diff-up':diff<0?'diff-down':'diff-same'}">${diff>0?'+':''}${diff}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+async function concluirContagem(subId) {
+  await apiPatch('contagem_submissions','id=eq.'+subId,{status:'concluida',completed_by:CU.login,completed_at:new Date().toISOString()});
+  const s = contagemSubmissions.find(s=>s.id===subId);
+  if (s) { s.status='concluida'; s.completed_by=CU.login; }
+  document.getElementById('subDetail')?.remove();
+  renderTab();
+  toast('Contagem concluída! ✅');
+}
+
+// ─── ADMIN — TEMPLATES ───
+function novoTemplate() {
+  abrirModalTemplate(null);
+}
+
+function editarTemplate(id) {
+  abrirModalTemplate(contagemTemplates.find(t=>t.id===id));
+}
+
+function abrirModalTemplate(tmpl) {
+  const isEdit = !!tmpl;
+  const html = `
+    <div class="modal-overlay" id="modalTemplate" onclick="if(event.target===this)fecharModal('modalTemplate')">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">${isEdit?'Editar':'Nova'} Contagem</div>
+          <button class="modal-close" onclick="fecharModal('modalTemplate')">✕</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Emoji</label>
+          <input class="form-input" id="tmplEmoji" value="${esc(tmpl?.emoji||'📦')}" maxlength="2" style="width:70px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Título</label>
+          <input class="form-input" id="tmplTitulo" placeholder="Ex: Estoque Cozinha" value="${esc(tmpl?.titulo||'')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quem pode preencher</label>
+          <div class="users-chips" id="chipsPreenchedor">
+            ${allUsers.filter(u=>u.role!=='superadmin').map(u=>`
+              <div class="chip ${(tmpl?.allowed_users||[]).includes(u.login)?'selected':''}" 
+                id="chip_pre_${u.login}" onclick="toggleChip('pre','${u.login}')">
+                ${u.avatar||'👤'} ${esc(u.nome||u.login)}
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quem recebe</label>
+          <div class="users-chips" id="chipsReceptor">
+            ${allUsers.filter(u=>u.role!=='superadmin').map(u=>`
+              <div class="chip ${(tmpl?.receivers||[]).includes(u.login)?'selected':''}" 
+                id="chip_rec_${u.login}" onclick="toggleChip('rec','${u.login}')">
+                ${u.avatar||'👤'} ${esc(u.nome||u.login)}
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Itens (<span id="selCount">${(tmpl?.items||[]).length}</span> selecionados)</label>
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <button id="abaIndividual" onclick="setAbaItens('individual')" style="flex:1;padding:8px;font-size:12px;font-weight:700;border:none;border-radius:var(--radius-sm);background:var(--accent);color:white;cursor:pointer">📦 Individual</button>
+            <button id="abaCategoria" onclick="setAbaItens('categoria')" style="flex:1;padding:8px;font-size:12px;font-weight:700;border:none;border-radius:var(--radius-sm);background:var(--surface2);color:var(--muted);cursor:pointer">🏷️ Por Categoria</button>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;padding:2px 4px">
+            <span id="selSummary">Nenhum item selecionado</span>
+          </div>
+          <div id="painelIndividual">
+            <input type="search" id="itemSearch" class="form-input" placeholder="🔍 Buscar item..." oninput="filtrarItensModal(this.value)" autocomplete="off" style="margin-bottom:8px">
+            <div id="listaItensModal" style="max-height:200px;overflow-y:auto">
+              ${renderItensParaAdicionar(tmpl?.items||[])}
+            </div>
+          </div>
+          <div id="painelCategoria" style="display:none;max-height:280px;overflow-y:auto">
+            ${renderItensPorCategoria(tmpl?.items||[])}
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          ${isEdit?`<button class="btn-danger" onclick="deletarTemplate('${tmpl.id}')">🗑️ Excluir</button>`:''}
+          <button class="btn-primary" style="flex:1" onclick="salvarTemplate(${isEdit?`'${tmpl.id}'`:'null'})">
+            ${isEdit?'Salvar':'Criar'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  window._tmplItemsSel = [...(tmpl?.items||[])];
+}
+
+let _tmplItemsSel = [];
+let _abaItens = 'individual';
+
+function setAbaItens(aba) {
+  _abaItens = aba;
+  document.getElementById('painelIndividual').style.display = aba==='individual'?'block':'none';
+  document.getElementById('painelCategoria').style.display = aba==='categoria'?'block':'none';
+  document.getElementById('abaIndividual').style.background = aba==='individual'?'var(--accent)':'var(--surface2)';
+  document.getElementById('abaIndividual').style.color = aba==='individual'?'white':'var(--muted)';
+  document.getElementById('abaCategoria').style.background = aba==='categoria'?'var(--accent)':'var(--surface2)';
+  document.getElementById('abaCategoria').style.color = aba==='categoria'?'white':'var(--muted)';
+}
+
+function renderItensPorCategoria(selecionados) {
+  const selIds = new Set(selecionados.map(i=>i.id));
+  return allCategories.map(cat => {
+    const catItems = allItems.filter(i=>i.category_id===cat.id);
+    if (!catItems.length) return '';
+    const selCount = catItems.filter(i=>selIds.has(i.id)).length;
+    return `<div style="margin-bottom:6px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface2);cursor:pointer" onclick="toggleDropCat('dropc_${cat.id}','droparrow_${cat.id}')">
+        <span>${cat.emoji||'📦'}</span>
+        <span style="flex:1;font-size:13px;font-weight:700">${esc(cat.nome)}</span>
+        <span style="font-size:11px;color:${selCount?'var(--green)':'var(--muted)'}">
+          ${selCount?selCount+'/'+catItems.length+' ✓':'0/'+catItems.length}
+        </span>
+        <button id="btncat_${cat.id}" onclick="event.stopPropagation();toggleCategoria('${cat.id}')" 
+          style="font-size:11px;font-weight:700;padding:3px 8px;background:rgba(91,94,244,0.15);color:var(--accent);border:1px solid var(--accent);border-radius:4px;margin:0 4px">
+          ${catItems.every(i=>selIds.has(i.id))?'Desmarcar':'Todos'}
+        </button>
+        <span id="droparrow_${cat.id}" style="color:var(--muted);font-size:12px">▼</span>
+      </div>
+      <div id="dropc_${cat.id}" style="display:none;flex-direction:column">
+        ${catItems.map(i=>{
+          const sel = selIds.has(i.id);
+          return `<label style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-top:1px solid var(--border);background:${sel?'rgba(34,197,94,0.06)':''};transition:background .15s">
+            <input type="checkbox" id="chk_${i.id}" ${sel?'checked':''} 
+              onchange="this.checked?addItemTmpl('${i.id}'):removeItemTmpl('${i.id}')"
+              style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+            <span style="flex:1;font-size:13px">${esc(i.nome)}</span>
+            <span style="font-size:11px;color:var(--muted)">${esc(i.unidade||'un')}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+}
+
+function toggleDropCat(id, arrowId) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(arrowId);
+  if (!el) return;
+  const vis = el.style.display !== 'none';
+  el.style.display = vis ? 'none' : 'flex';
+  el.style.flexDirection = 'column';
+  if (arrow) arrow.textContent = vis ? '▼' : '▲';
+}
+
+function toggleCategoria(catId) {
+  const catItems = allItems.filter(i=>i.category_id===catId);
+  const todosSelec = catItems.every(i=>_tmplItemsSel.find(s=>s.id===i.id));
+  // Atualizar _tmplItemsSel diretamente sem depender do DOM
+  if (todosSelec) {
+    catItems.forEach(i => { _tmplItemsSel = _tmplItemsSel.filter(s=>s.id!==i.id); });
+  } else {
+    catItems.forEach(i => {
+      if (!_tmplItemsSel.find(s=>s.id===i.id)) {
+        _tmplItemsSel.push({id:i.id,nome:i.nome,unidade:i.unidade,category_id:i.category_id});
+      }
+    });
+  }
+  // Re-renderizar o dropdown da categoria
+  const dropc = document.getElementById('dropc_'+catId);
+  if (dropc) {
+    const selIds = new Set(_tmplItemsSel.map(s=>s.id));
+    dropc.innerHTML = catItems.map(i => {
+      const sel = selIds.has(i.id);
+      return `<label style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-top:1px solid var(--border);background:${sel?'rgba(34,197,94,0.06)':''};transition:background .15s">
+        <input type="checkbox" id="chk_${i.id}" ${sel?'checked':''}
+          onchange="this.checked?addItemTmpl('${i.id}'):removeItemTmpl('${i.id}')"
+          style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+        <span style="flex:1;font-size:13px">${esc(i.nome)}</span>
+        <span style="font-size:11px;color:var(--muted)">${esc(i.unidade||'un')}</span>
+      </label>`;
+    }).join('');
+    // Garantir visível
+    dropc.style.display = 'flex';
+    dropc.style.flexDirection = 'column';
+    document.getElementById('droparrow_'+catId).textContent = '▲';
+  }
+  // Atualizar botão e contador
+  const btn = document.getElementById('btncat_'+catId);
+  if (btn) btn.textContent = todosSelec ? 'Todos' : 'Desmarcar';
+  atualizarContadorCat(catId);
+  atualizarSelSummary();
+}
+
+function addCategoria(catId) {
+  const catItems = allItems.filter(i=>i.category_id===catId);
+  catItems.forEach(item => addItemTmpl(item.id));
+}
+
+function renderItensParaAdicionar(selecionados) {
+  const selIds = new Set(selecionados.map(i=>i.id));
+  const sorted = [...allItems].sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+  return sorted.map(i => {
+    const cat = allCategories.find(c=>c.id===i.category_id);
+    const sel = selIds.has(i.id);
+    return `<label id="indlabel_${i.id}" style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);background:${sel?'rgba(34,197,94,0.06)':''};transition:background .15s">
+      <input type="checkbox" id="indchk_${i.id}" ${sel?'checked':''}
+        onchange="this.checked?addItemTmpl('${i.id}'):removeItemTmpl('${i.id}')"
+        style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0">
+      <span style="font-size:13px;flex:1">${cat?.emoji||'📦'} ${esc(i.nome)}</span>
+      <span style="font-size:11px;color:var(--muted)">${esc(i.unidade||'un')}</span>
+    </label>`;
+  }).join('');
+}
+
+function filtrarItensModal(q) {
+  const query = q.toLowerCase();
+  document.querySelectorAll('#listaItensModal .chip').forEach(chip => {
+    chip.style.display = !query||chip.textContent.toLowerCase().includes(query)?'':'none';
+  });
+}
+
+function toggleSelExpandido() {
+  const el = document.getElementById('itensSelecionados');
+  const btn = document.getElementById('btnExpandSel');
+  const vis = el.style.display !== 'none';
+  el.style.display = vis ? 'none' : 'flex';
+  if (btn) btn.textContent = vis ? 'ver todos ▼' : 'recolher ▲';
+}
+
+function atualizarContadorCat(catId) {
+  const cat = allCategories.find(c=>c.id===catId);
+  if (!cat) return;
+  const catItems = allItems.filter(i=>i.category_id===catId);
+  const selCount = catItems.filter(i=>_tmplItemsSel.find(s=>s.id===i.id)).length;
+  // Atualizar contador no header da categoria
+  const dropc = document.getElementById('dropc_'+catId);
+  if (!dropc) return;
+  const header = dropc.previousElementSibling;
+  if (!header) return;
+  const countEl = header.querySelectorAll('span')[2];
+  if (countEl) {
+    countEl.textContent = selCount?selCount+'/'+catItems.length+' ✓':'0/'+catItems.length;
+    countEl.style.color = selCount?'var(--green)':'var(--muted)';
+  }
+}
+
+function atualizarSelSummary() {
+  const n = _tmplItemsSel.length;
+  const el = document.getElementById('selSummary');
+  const cnt = document.getElementById('selCount');
+  if (el) el.textContent = n===0 ? 'Nenhum item selecionado' : n+' item'+(n!==1?'s':'')+' selecionado'+(n!==1?'s':'');
+  if (cnt) cnt.textContent = n;
+  // Atualizar chips expandidos
+  const sel = document.getElementById('itensSelecionados');
+  if (sel) {
+    sel.innerHTML = _tmplItemsSel.map(i=>`<div class="chip selected" id="sel_${i.id}" onclick="removeItemTmpl('${i.id}')" style="font-size:12px">${esc(i.nome)} ✕</div>`).join('');
+  }
+}
+
+function addItemTmpl(itemId) {
+  const item = allItems.find(i=>i.id===itemId);
+  if (!item||_tmplItemsSel.find(i=>i.id===itemId)) return;
+  _tmplItemsSel.push({id:item.id,nome:item.nome,unidade:item.unidade,category_id:item.category_id});
+  document.getElementById('add_'+itemId)?.remove();
+  const sel = document.getElementById('itensSelecionados');
+  if (sel) {
+    const div = document.createElement('div');
+    div.className='chip selected'; div.id='sel_'+itemId;
+    div.style.cssText='font-size:13px;padding:6px 12px';
+    div.onclick=()=>removeItemTmpl(itemId);
+    div.textContent=item.nome+' ✕';
+    sel.appendChild(div);
+  }
+  const cnt = document.getElementById('selCount');
+  if (cnt) cnt.textContent = _tmplItemsSel.length;
+}
+
+function removeItemTmpl(itemId) {
+  _tmplItemsSel = _tmplItemsSel.filter(i=>i.id!==itemId);
+  document.getElementById('sel_'+itemId)?.remove();
+  const item = allItems.find(i=>i.id===itemId);
+  if (item) {
+    const lista = document.getElementById('listaItensModal');
+    if (lista) {
+      const cat = allCategories.find(c=>c.id===item.category_id);
+      const div = document.createElement('div');
+      div.className='chip'; div.id='add_'+itemId;
+      div.onclick=()=>addItemTmpl(itemId);
+      div.innerHTML=`${cat?.emoji||'📦'} ${esc(item.nome)} <span style="color:var(--muted);margin-left:4px">${esc(item.unidade||'un')}</span>`;
+      lista.appendChild(div);
+    }
+  }
+}
+
+function toggleChip(tipo, login) {
+  const id = `chip_${tipo==='pre'?'pre':'rec'}_${login}`;
+  document.getElementById(id)?.classList.toggle('selected');
+}
+
+async function salvarTemplate(id) {
+  const titulo = document.getElementById('tmplTitulo').value.trim();
+  const emoji  = document.getElementById('tmplEmoji').value.trim()||'📦';
+  if (!titulo) { toast('Informe o título!'); return; }
+  const allowed_users = Array.from(document.querySelectorAll('#chipsPreenchedor .chip.selected')).map(c=>c.id.replace('chip_pre_',''));
+  const receivers     = Array.from(document.querySelectorAll('#chipsReceptor .chip.selected')).map(c=>c.id.replace('chip_rec_',''));
+  show('loadingOverlay');
+  try {
+    if (id) {
+      await apiPatch('contagem_templates','id=eq.'+id,{titulo,emoji,allowed_users,receivers,items:_tmplItemsSel});
+      const idx = contagemTemplates.findIndex(t=>t.id===id);
+      if (idx>=0) contagemTemplates[idx]={...contagemTemplates[idx],titulo,emoji,allowed_users,receivers,items:_tmplItemsSel};
+    } else {
+      const res = await apiPost('contagem_templates',{workspace_id:WORKSPACE_ID,titulo,emoji,allowed_users,receivers,items:_tmplItemsSel});
+      contagemTemplates.push(Array.isArray(res)?res[0]:res);
+    }
+    fecharModal('modalTemplate');
+    hide('loadingOverlay');
+    renderTab();
+    toast(id?'Template atualizado!':'Template criado! ✅');
+  } catch(e) { hide('loadingOverlay'); toast('Erro: '+JSON.stringify(e)); }
+}
+
+async function deletarTemplate(id) {
+  if (!confirm('Excluir este template?')) return;
+  show('loadingOverlay');
+  await fetch('/rest/v1/contagem_templates?id=eq.'+id, {
+    method:'DELETE', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+  });
+  contagemTemplates = contagemTemplates.filter(t=>t.id!==id);
+  fecharModal('modalTemplate');
+  hide('loadingOverlay');
+  renderTab();
+  toast('Template excluído!');
+}
+
+// ─── EXPORT PDF ───
+async function exportarSubPDF(subId) {
+  const sub = contagemSubmissions.find(s=>s.id===subId);
+  if (!sub) return;
+  const tmpl = contagemTemplates.find(t=>t.id===sub.template_id);
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(sub.titulo||tmpl?.titulo||'Contagem', 14, y); y+=10;
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Por: '+sub.submitted_by+' | '+new Date(sub.created_at).toLocaleString('pt-BR'), 14, y); y+=12;
+  const byCat = groupByCategory(sub.items||[]);
+  Object.keys(byCat).forEach(catId => {
+    const cat = allCategories.find(c=>c.id===catId);
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text((cat?.nome||'Sem Categoria').toUpperCase(), 14, y); y+=7;
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    byCat[catId].forEach(i => {
+      const qty = i.qty!==''&&i.qty!==undefined?i.qty:'—';
+      doc.text(`${i.nome}: ${qty} ${i.unidade||'un'}${i.obs?' ('+i.obs+')':''}`, 18, y);
+      y+=6; if(y>270){doc.addPage();y=20;}
+    });
+    y+=3;
+  });
+  doc.save((sub.titulo||'contagem')+'.pdf');
+}
+
+// ─── UTILS ───
+function fecharModal(id) { document.getElementById(id)?.remove(); }
+function toggleUserMenu() { window.location.href = '/'; }
+function toast(msg, type='ok') {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:'+(type==='ok'?'#22c55e':'#ef4444')+';color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;white-space:nowrap';
+  d.textContent = msg;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(), 3000);
+}
+
+init();
+</script>
+</body>
+</html>

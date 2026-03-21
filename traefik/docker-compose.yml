@@ -1,0 +1,35 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    ports: ["80:80", "443:443"]
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.letsencrypt.acme.email=rodrigo@mexicanabr.com.br
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+    environment:
+      - CF_DNS_API_TOKEN=VfuaC4EdSYpVokIXeylz3nho-_cfeARL8vbOQNcm
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wildcard.rule=Host(`unilix.tech`)"
+      - "traefik.http.routers.wildcard.entrypoints=websecure"
+      - "traefik.http.routers.wildcard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.wildcard.tls.domains[0].main=unilix.tech"
+      - "traefik.http.routers.wildcard.tls.domains[0].sans=*.unilix.tech"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - traefik_proxy
+networks:
+  traefik_proxy:
+    external: true

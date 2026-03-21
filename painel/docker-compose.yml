@@ -1,0 +1,22 @@
+services:
+  painel:
+    build: .
+    container_name: painel-master
+    restart: always
+    environment:
+      - MASTER_URL=https://zlxsbnrtgieclpypztow.supabase.co
+      - MASTER_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpseHNibnJ0Z2llY2xweXB6dG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTEwODQsImV4cCI6MjA4OTIyNzA4NH0.Tg45Vjofb-NMqDtPCTw0pbFmxQbUBotiNAKknrLtSX0
+      - MASTER_PASS=admin123
+      - ORCH_URL=https://api.unilix.tech
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.painel.rule=Host(`painel.unilix.tech`)"
+      - "traefik.http.routers.painel.entrypoints=websecure"
+      - "traefik.http.routers.painel.tls.certresolver=letsencrypt"
+      - "traefik.http.services.painel.loadbalancer.server.port=80"
+    networks:
+      - traefik_proxy
+networks:
+  traefik_proxy:
+    external: true

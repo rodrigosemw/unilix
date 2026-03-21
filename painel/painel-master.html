@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Master — Unilix</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0f0e;--surface:#141918;--surface2:#1c2320;
+  --accent:#3ecf6e;--accent2:#f0a500;--danger:#e05252;--info:#4ea8de;
+  --text:#eef2ef;--muted:#6b7d74;--border:#222e29;--radius:12px;
+}
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+*{font-family:'Space Grotesk',sans-serif}
+
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:24px}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:100%;max-width:380px}
+.login-title{font-size:22px;font-weight:700;margin-bottom:6px;text-align:center}
+.login-sub{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.btn{width:100%;background:var(--accent);color:#0c0f0e;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:14px;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 14px;font-size:12px;width:auto;border-radius:6px}
+.error-msg{color:var(--danger);font-size:13px;text-align:center;margin-top:8px}
+
+#appScreen{display:none}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
+.logo{padding:0 24px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo-title{font-size:18px;font-weight:700;color:var(--accent)}
+.logo-sub{font-size:11px;color:var(--muted)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 24px;cursor:pointer;font-size:14px;color:var(--muted);border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{color:var(--text);background:var(--surface2)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--surface2)}
+.sidebar-footer{margin-top:auto;padding:16px 24px;border-top:1px solid var(--border)}
+.logout-btn{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none}
+.logout-btn:hover{color:var(--danger)}
+
+.main{padding:32px;overflow-y:auto}
+.page-header{margin-bottom:28px}
+.page-title{font-size:22px;font-weight:700}
+.page-sub{font-size:13px;color:var(--muted);margin-top:4px}
+
+.tab{display:none}
+.tab.active{display:block}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-bottom:28px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.card-value{font-size:28px;font-weight:700}
+
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-title{font-size:14px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:#3ecf6e22;color:#3ecf6e}
+.badge-yellow{background:#f0a50022;color:#f0a500}
+.badge-red{background:#e0525222;color:#e05252}
+.badge-blue{background:#4ea8de22;color:#4ea8de}
+.badge-gray{background:#6b7d7422;color:#6b7d74}
+
+.plan-select{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.plan-opt{border:2px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;text-align:center;transition:all .15s}
+.plan-opt:hover{border-color:var(--muted)}
+.plan-opt.selected{border-color:var(--accent);background:#3ecf6e11}
+.plan-opt .p-name{font-weight:700;font-size:14px}
+.plan-opt .p-price{font-size:12px;color:var(--muted);margin-top:2px}
+
+.empty{text-align:center;padding:48px;color:var(--muted);font-size:14px}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:48px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:13px;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--accent);color:var(--accent)}
+.toast.error{border-color:var(--danger);color:var(--danger)}
+
+.result-box{background:var(--surface2);border:1px solid var(--accent);border-radius:8px;padding:16px;margin-top:16px;font-size:13px;line-height:1.8;display:none}
+.result-box.show{display:block}
+.result-row{display:flex;gap:12px;margin-bottom:4px}
+.result-key{color:var(--muted);min-width:70px}
+.result-val{font-weight:600;color:var(--accent);word-break:break-all}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div style="text-align:center;margin-bottom:8px">
+    <div style="font-size:36px">🛒</div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent)">Unilix</div>
+    <div style="font-size:12px;color:var(--muted)">Painel Master</div>
+  </div>
+  <div class="login-box">
+    <div class="login-title">Acesso Restrito</div>
+    <div class="login-sub">Apenas administradores</div>
+    <div class="field">
+      <label>Senha master</label>
+      <input type="password" id="masterPassInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn" onclick="doLogin()">Entrar</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo">
+        <div class="logo-title">🛒 Unilix</div>
+        <div class="logo-sub">Painel Master</div>
+      </div>
+      <div class="nav-item active" onclick="showTab('dashboard',this)"><span>📊</span> Dashboard</div>
+      <div class="nav-item" onclick="showTab('clientes',this)"><span>👥</span> Clientes</div>
+      <div class="nav-item" onclick="showTab('planos',this)"><span>💎</span> Planos</div>
+      <div class="nav-item" onclick="showTab('criar',this)"><span>➕</span> Criar Cliente</div>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="logout()">⬅ Sair</button>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <div class="tab active" id="tab-dashboard">
+        <div class="page-header">
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Visão geral do SaaS</div>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="card-label">Total Clientes</div><div class="card-value" style="color:var(--info)" id="statTotal">—</div></div>
+          <div class="card"><div class="card-label">Ativos</div><div class="card-value" style="color:var(--accent)" id="statAtivos">—</div></div>
+          <div class="card"><div class="card-label">Pro</div><div class="card-value" style="color:var(--accent2)" id="statPro">—</div></div>
+          <div class="card"><div class="card-label">Gold</div><div class="card-value" style="color:#ffd166" id="statGold">—</div></div>
+          <div class="card"><div class="card-label">Receita/mês</div><div class="card-value" style="color:var(--accent)" id="statReceita">—</div></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <div class="table-title">Clientes Recentes</div>
+            <button class="btn btn-outline btn-sm" onclick="loadDashboard()">↻ Atualizar</button>
+          </div>
+          <div id="dashBody"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <div class="tab" id="tab-clientes">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+          <div><div class="page-title">Clientes</div><div class="page-sub">Todos os clientes do SaaS</div></div>
+          <button class="btn btn-sm" onclick="showTab('criar',document.querySelectorAll('.nav-item')[3])" style="width:auto">+ Novo</button>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head">
+            <div class="table-title">Lista de Clientes</div>
+            <button class="btn btn-outline btn-sm" onclick="loadClientes()">↻ Atualizar</button>
+          </div>
+          <div id="clientesBody"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <div class="tab" id="tab-planos">
+        <div class="page-header"><div class="page-title">Planos</div><div class="page-sub">Configuração dos planos</div></div>
+        <div id="planosBody"><div class="spinner"></div></div>
+      </div>
+
+      <div class="tab" id="tab-criar">
+        <div class="page-header"><div class="page-title">Criar Cliente</div><div class="page-sub">Provisionar novo container</div></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:500px">
+          <div class="field"><label>Nome / empresa</label><input type="text" id="criarNome" placeholder="Ex: João Silva"></div>
+          <div class="field"><label>E-mail</label><input type="email" id="criarEmail" placeholder="joao@empresa.com"></div>
+          <div class="field"><label>Plano</label></div>
+          <div class="plan-select">
+            <div class="plan-opt selected" onclick="selectPlan('starter',this)"><div class="p-name">Starter</div><div class="p-price">Grátis</div></div>
+            <div class="plan-opt" onclick="selectPlan('pro',this)"><div class="p-name">Pro</div><div class="p-price">R$ 49,90</div></div>
+            <div class="plan-opt" onclick="selectPlan('gold',this)"><div class="p-name">Gold</div><div class="p-price">R$ 99,90</div></div>
+          </div>
+          <button class="btn" onclick="criarCliente()" id="criarBtn">🚀 Criar e Provisionar</button>
+          <div class="error-msg" id="criarError"></div>
+          <div class="result-box" id="criarResult">
+            <div style="font-weight:700;margin-bottom:10px;color:var(--accent)">✅ Cliente criado com sucesso!</div>
+            <div class="result-row"><span class="result-key">URL:</span><span class="result-val" id="rUrl"></span></div>
+            <div class="result-row"><span class="result-key">Login:</span><span class="result-val" id="rLogin"></span></div>
+            <div class="result-row"><span class="result-key">Senha:</span><span class="result-val" id="rSenha"></span></div>
+            <div class="result-row"><span class="result-key">Plano:</span><span class="result-val" id="rPlano"></span></div>
+            <p style="margin-top:12px;font-size:12px;color:var(--muted)">⚠️ Salva a senha — não será mostrada novamente.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MASTER_URL  = '__MASTER_URL__';
+const MASTER_KEY  = '__MASTER_KEY__';
+const MASTER_PASS = '__MASTER_PASS__';
+const ORCH_URL    = '__ORCH_URL__';
+
+const sb = supabase.createClient(MASTER_URL, MASTER_KEY);
+let planoCriando = 'starter';
+
+function doLogin() {
+  const pass = document.getElementById('masterPassInput').value;
+  if (pass === MASTER_PASS) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    loadDashboard(); loadClientes(); loadPlanos();
+  } else {
+    document.getElementById('loginError').textContent = 'Senha incorreta.';
+  }
+}
+function logout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('masterPassInput').value = '';
+}
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (el) el.classList.add('active');
+}
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+function planoBadge(p) {
+  const m = {starter:'badge-gray',pro:'badge-blue',gold:'badge-yellow'};
+  return `<span class="badge ${m[p]||'badge-gray'}">${p||'—'}</span>`;
+}
+function statusBadge(s) {
+  const m = {ativo:'badge-green',pendente:'badge-yellow',suspenso:'badge-red',criando:'badge-blue'};
+  return `<span class="badge ${m[s]||'badge-gray'}">${s||'—'}</span>`;
+}
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+
+async function loadDashboard() {
+  const { data: cl } = await sb.from('clientes').select('*').order('criado_em',{ascending:false});
+  const lista = cl || [];
+  document.getElementById('statTotal').textContent  = lista.length;
+  document.getElementById('statAtivos').textContent = lista.filter(c=>c.status==='ativo').length;
+  document.getElementById('statPro').textContent    = lista.filter(c=>c.plano_id==='pro').length;
+  document.getElementById('statGold').textContent   = lista.filter(c=>c.plano_id==='gold').length;
+  const { data: pl } = await sb.from('planos').select('id,preco');
+  const precos = Object.fromEntries((pl||[]).map(p=>[p.id,p.preco]));
+  const rec = lista.filter(c=>c.status==='ativo').reduce((a,c)=>a+(precos[c.plano_id]||0),0);
+  document.getElementById('statReceita').textContent = 'R$ '+rec.toFixed(2).replace('.',',');
+  const rows = lista.slice(0,8).map(c=>`<tr>
+    <td>${c.nome||'—'}</td><td>${c.email||'—'}</td>
+    <td>${planoBadge(c.plano_id)}</td><td>${statusBadge(c.status)}</td>
+    <td>${c.subdominio?`<a href="https://${c.subdominio}.unilix.tech" target="_blank" style="color:var(--accent)">${c.subdominio}.unilix.tech ↗</a>`:'—'}</td>
+    <td>${fmtDate(c.criado_em)}</td></tr>`).join('');
+  document.getElementById('dashBody').innerHTML = lista.length===0
+    ? '<div class="empty"><div class="empty-icon">👥</div>Nenhum cliente ainda</div>'
+    : `<table><thead><tr><th>Nome</th><th>Email</th><th>Plano</th><th>Status</th><th>URL</th><th>Criado</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function loadClientes() {
+  document.getElementById('clientesBody').innerHTML = '<div class="spinner"></div>';
+  const { data: cl } = await sb.from('clientes').select('*, containers(*)').order('criado_em',{ascending:false});
+  const lista = cl || [];
+  if (!lista.length) { document.getElementById('clientesBody').innerHTML='<div class="empty"><div class="empty-icon">👥</div>Nenhum cliente</div>'; return; }
+  const rows = lista.map(c=>{
+    const ct = c.containers?.[0];
+    return `<tr>
+      <td><strong>${c.nome||'—'}</strong><br><span style="font-size:11px;color:var(--muted)">${c.email||''}</span></td>
+      <td>${planoBadge(c.plano_id)}</td><td>${statusBadge(c.status)}</td>
+      <td>${c.subdominio?`<a href="https://${c.subdominio}.unilix.tech" target="_blank" style="color:var(--accent);font-size:12px">${c.subdominio}.unilix.tech ↗</a>`:'—'}</td>
+      <td>${ct?statusBadge(ct.status):'<span class="badge badge-gray">sem container</span>'}</td>
+      <td>${fmtDate(c.criado_em)}</td></tr>`;
+  }).join('');
+  document.getElementById('clientesBody').innerHTML = `<table><thead><tr><th>Cliente</th><th>Plano</th><th>Status</th><th>URL</th><th>Container</th><th>Criado</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function loadPlanos() {
+  const { data: pl } = await sb.from('planos').select('*').order('preco');
+  const lista = pl || [];
+  if (!lista.length) { document.getElementById('planosBody').innerHTML='<div class="empty"><div class="empty-icon">💎</div>Nenhum plano no BD Master</div>'; return; }
+  document.getElementById('planosBody').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;max-width:700px">${
+    lista.map(p=>`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:16px;font-weight:700">${p.nome}</span>
+        <span style="font-weight:700;color:var(--accent)">${p.preco===0?'Grátis':'R$ '+Number(p.preco).toFixed(2).replace('.',',')}</span>
+      </div>
+      <div style="font-size:12px;display:grid;gap:5px;color:var(--muted)">
+        <div>Templates: <b style="color:var(--text)">${p.max_templates??'∞'}</b></div>
+        <div>Admins: <b style="color:var(--text)">${p.max_admins??'∞'}</b></div>
+        <div>Usuários: <b style="color:var(--text)">${p.max_users??'∞'}</b></div>
+        <div>Itens/lista: <b style="color:var(--text)">${p.max_itens??'∞'}</b></div>
+        <div>Histórico: <b>${p.historico?'✅':'❌'}</b></div>
+        <div>Relatórios: <b>${p.relatorios?'✅':'❌'}</b></div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function selectPlan(plano, el) {
+  planoCriando = plano;
+  document.querySelectorAll('.plan-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function criarCliente() {
+  const nome  = document.getElementById('criarNome').value.trim();
+  const email = document.getElementById('criarEmail').value.trim();
+  const err   = document.getElementById('criarError');
+  const btn   = document.getElementById('criarBtn');
+  const res   = document.getElementById('criarResult');
+  err.textContent=''; res.classList.remove('show');
+  if (!nome||!email) { err.textContent='Preencha nome e email.'; return; }
+  if (!email.includes('@')) { err.textContent='Email inválido.'; return; }
+  btn.textContent='⏳ Criando...'; btn.disabled=true;
+  try {
+    const resp = await fetch(`${ORCH_URL}/criar-cliente`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({nome,email,plano:planoCriando})
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      document.getElementById('rUrl').textContent   = data.url;
+      document.getElementById('rLogin').textContent = data.login;
+      document.getElementById('rSenha').textContent = data.senha;
+      document.getElementById('rPlano').textContent = data.plano;
+      res.classList.add('show');
+      toast('✅ Cliente provisionado!');
+      document.getElementById('criarNome').value='';
+      document.getElementById('criarEmail').value='';
+      setTimeout(()=>{ loadDashboard(); loadClientes(); }, 4000);
+    } else {
+      err.textContent = data.erro||'Erro ao criar cliente.';
+      toast('Erro ao criar cliente','error');
+    }
+  } catch(e) {
+    err.textContent='Erro de conexão com o Orchestrator.';
+    toast('Orchestrator indisponível','error');
+  }
+  btn.textContent='🚀 Criar e Provisionar'; btn.disabled=false;
+}
+</script>
+</body>
+</html>

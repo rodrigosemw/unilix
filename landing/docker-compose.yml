@@ -1,0 +1,19 @@
+services:
+  landing:
+    image: nginx:alpine
+    container_name: landing-unilix
+    restart: always
+    volumes:
+      - /home/ubuntu/landing/html:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.landing.rule=Host(`unilix.tech`) || Host(`www.unilix.tech`)"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
+      - "traefik.http.services.landing.loadbalancer.server.port=80"
+    networks:
+      - traefik_proxy
+networks:
+  traefik_proxy:
+    external: true

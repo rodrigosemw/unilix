@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.svg" />
+  <title>ListaFácil — Controle de compras e estoque para restaurantes | Unilix</title>
+  <meta name="description" content="Crie listas colaborativas, controle o estoque e nunca mais perca uma compra. Simples, rápido e funciona no celular." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================
+       RESET & BASE
+    ============================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --dark-bg: #0B0E1A;
+      --dark-surface: #12172B;
+      --dark-border: rgba(255,255,255,0.08);
+      --primary: #5B5EF4;
+      --accent: #00D2FF;
+      --gradient: linear-gradient(135deg, #5B5EF4, #00D2FF);
+      --light-bg: #F5F7FF;
+      --white: #ffffff;
+      --text-dark: #111827;
+      --text-muted: #6B7280;
+      --text-light: rgba(255,255,255,0.7);
+      --text-light-muted: rgba(255,255,255,0.45);
+      --success: #10B981;
+      --card-shadow-hover: 0 12px 40px rgba(91,94,244,0.18);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --radius-lg: 20px;
+      --nav-height: 72px;
+      --font: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: var(--font);
+      color: var(--text-dark);
+      background: var(--white);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; font-family: var(--font); border: none; }
+    ul { list-style: none; }
+    em { font-style: normal; }
+
+    /* ============================================
+       TYPOGRAPHY
+    ============================================ */
+    .display-xl { font-size: clamp(2.2rem, 5.5vw, 3.75rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; }
+    .display-lg { font-size: clamp(1.9rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; }
+    .display-md { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+    .body-lg { font-size: clamp(1rem, 1.5vw, 1.125rem); line-height: 1.7; }
+
+    .gradient-text {
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ============================================
+       UTILITY
+    ============================================ */
+    .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .section-tag--light { background: rgba(91,94,244,0.1); color: var(--primary); border: 1px solid rgba(91,94,244,0.2); }
+    .section-tag--dark { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.12); }
+
+    .section-header { text-align: center; margin-bottom: 60px; }
+    .section-header p { margin-top: 12px; color: var(--text-muted); max-width: 520px; margin-left: auto; margin-right: auto; }
+
+    /* ============================================
+       BUTTONS
+    ============================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      transition: all 0.22s ease;
+      white-space: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.12); opacity: 0; transition: opacity 0.22s ease; }
+    .btn:hover::before { opacity: 1; }
+
+    .btn-gradient { background: var(--gradient); color: var(--white); box-shadow: 0 4px 20px rgba(91,94,244,0.4); }
+    .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(91,94,244,0.55); }
+
+    .btn-outline-light { background: transparent; color: rgba(255,255,255,0.9); border: 1.5px solid rgba(255,255,255,0.25); }
+    .btn-outline-light:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.45); transform: translateY(-2px); }
+
+    .btn-outline-dark { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline-dark:hover { background: rgba(91,94,244,0.06); transform: translateY(-2px); }
+
+    .btn-ghost-dark { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.12); }
+    .btn-ghost-dark:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+
+    .btn-lg { padding: 16px 36px; font-size: 1rem; border-radius: 12px; }
+    .btn-sm { padding: 9px 20px; font-size: 0.875rem; border-radius: 8px; }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .btn-gradient-animated {
+      background: linear-gradient(135deg, #5B5EF4, #00D2FF, #5B5EF4);
+      background-size: 200% 200%;
+      animation: gradientShift 4s ease infinite;
+    }
+
+    /* ============================================
+       NAVIGATION
+    ============================================ */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .nav.scrolled {
+      background: rgba(11,14,26,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .nav__inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+
+    .nav__logo { display: flex; align-items: center; gap: 10px; font-size: 1.125rem; font-weight: 800; color: var(--white); letter-spacing: -0.02em; }
+
+    .nav__breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: rgba(255,255,255,0.45); font-weight: 500; }
+    .nav__breadcrumb a { color: rgba(255,255,255,0.6); transition: color 0.2s; }
+    .nav__breadcrumb a:hover { color: var(--white); }
+    .nav__breadcrumb span { color: rgba(255,255,255,0.3); }
+    .nav__breadcrumb .current { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+    .nav__cta { display: flex; align-items: center; gap: 12px; }
+
+    .hamburger { display: none; flex-direction: column; gap: 5px; background: none; padding: 6px; border-radius: 8px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: rgba(255,255,255,0.85); border-radius: 2px; transition: all 0.3s ease; }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: var(--nav-height); left: 0; right: 0;
+      background: rgba(11,14,26,0.97);
+      backdrop-filter: blur(20px);
+      padding: 20px 24px 32px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      z-index: 999;
+      transform: translateY(-10px);
+      opacity: 0;
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+
+    .mobile-menu.open { display: block; transform: translateY(0); opacity: 1; pointer-events: all; }
+    .mobile-menu ul { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
+    .mobile-menu ul a { display: block; padding: 12px 8px; font-size: 1.05rem; font-weight: 500; color: rgba(255,255,255,0.8); border-radius: 8px; transition: all 0.2s; }
+    .mobile-menu ul a:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+
+    /* ============================================
+       HERO
+    ============================================ */
+    .hero {
+      background: var(--dark-bg);
+      padding: calc(var(--nav-height) + 72px) 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -180px; left: -100px;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(91,94,244,0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -100px; right: -100px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,210,255,0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero__grid-overlay {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 75%);
+    }
+
+    .hero__inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .hero__content { max-width: 560px; }
+
+    .hero__tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(91,94,244,0.12);
+      border: 1px solid rgba(91,94,244,0.3);
+      border-radius: 100px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 24px;
+    }
+
+    .hero__headline { color: var(--white); margin-bottom: 20px; }
+    .hero__sub { color: var(--text-light); margin-bottom: 36px; }
+
+    .hero__actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+    /* Phone mockup */
+    .hero__visual { position: relative; }
+
+    .phone-mockup {
+      background: #1a1f35;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 40px 80px rgba(91,94,244,0.25), 0 20px 40px rgba(0,0,0,0.35);
+      overflow: hidden;
+      max-width: 300px;
+      margin: 0 auto;
+      animation: floatPhone 7s ease-in-out infinite;
+    }
+
+    @keyframes floatPhone {
+      0%, 100% { transform: translateY(0) rotate(0.5deg); }
+      50% { transform: translateY(-14px) rotate(-0.5deg); }
+    }
+
+    .phone-notch { background: #0d1120; height: 28px; display: flex; align-items: center; justify-content: center; }
+    .phone-notch-bar { width: 80px; height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; }
+    .phone-content { padding: 16px 20px 24px; }
+
+    .phone-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .phone-header h4 { font-size: 1rem; font-weight: 800; color: var(--white); }
+    .phone-live { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: #34D399; font-weight: 700; }
+    .phone-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #34D399; animation: pulse 2s ease-in-out infinite; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.3); } }
+
+    .phone-list-label { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+
+    .phone-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 9px; margin-bottom: 6px; }
+    .phone-item:nth-child(odd) { background: rgba(255,255,255,0.04); }
+
+    .phone-checkbox {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .phone-checkbox.checked { background: var(--gradient); border-color: transparent; }
+    .phone-checkbox.checked::after { content: '✓'; font-size: 0.65rem; color: white; font-weight: 800; }
+
+    .phone-item-text { flex: 1; font-size: 0.8rem; color: rgba(255,255,255,0.75); }
+    .phone-item-text.done { text-decoration: line-through; opacity: 0.4; }
+    .phone-item-qty { font-size: 0.7rem; color: rgba(255,255,255,0.35); font-weight: 600; }
+
+    .phone-users {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .phone-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: white;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+
+    .phone-users-text { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
+
+    /* floating badge on visual */
+    .hero-badge {
+      position: absolute;
+      top: -12px;
+      right: -16px;
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-badge__icon { font-size: 1.25rem; }
+    .hero-badge__text strong { display: block; font-size: 0.8rem; font-weight: 700; color: #34D399; }
+    .hero-badge__text span { font-size: 0.7rem; color: rgba(255,255,255,0.4); }
+
+    /* ============================================
+       FEATURES SECTION
+    ============================================ */
+    .features {
+      padding: 100px 0;
+      background: var(--white);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--light-bg);
+      border: 1px solid #E9EBF8;
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      transition: all 0.25s ease;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(91,94,244,0.3);
+      box-shadow: 0 4px 20px rgba(91,94,244,0.1);
+      transform: translateY(-4px);
+    }
+
+    .feature-card__icon {
+      font-size: 1.75rem;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h4 { font-size: 1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+    .feature-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ============================================
+       HOW IT WORKS
+    ============================================ */
+    .how-it-works {
+      padding: 100px 0;
+      background: var(--light-bg);
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      position: relative;
+    }
+
+    .steps-grid::before {
+      content: '';
+      position: absolute;
+      top: 32px;
+      left: calc(16.67% + 20px);
+      right: calc(16.67% + 20px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      opacity: 0.3;
+    }
+
+    .step {
+      text-align: center;
+      position: relative;
+    }
+
+    .step__number {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: var(--gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--white);
+      margin: 0 auto 20px;
+      box-shadow: 0 8px 24px rgba(91,94,244,0.35);
+    }
+
+    .step h4 { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; }
+    .step p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; }
+
+    /* ============================================
+       PRICING SECTION
+    ============================================ */
+    .pricing {
+      padding: 100px 0;
+      background: var(--white);
+    }
+
+    .pricing__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .plan-card {
+      background: var(--white);
+      border: 1.5px solid #E5E7EB;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .plan-card:hover { border-color: rgba(91,94,244,0.35); box-shadow: 0 12px 40px rgba(91,94,244,0.12); transform: translateY(-6px); }
+
+    .plan-card--featured {
+      background: var(--dark-bg);
+      border-color: var(--primary);
+      color: var(--white);
+      transform: scale(1.03);
+      box-shadow: 0 20px 60px rgba(91,94,244,0.35), 0 0 0 1px rgba(91,94,244,0.4);
+    }
+
+    .plan-card--featured:hover {
+      transform: scale(1.03) translateY(-6px);
+      box-shadow: 0 28px 72px rgba(91,94,244,0.45), 0 0 0 1px rgba(91,94,244,0.5);
+    }
+
+    .plan-popular {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gradient);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 5px 18px;
+      border-radius: 100px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(91,94,244,0.4);
+    }
+
+    .plan-card__name { font-size: 0.875rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .plan-card--featured .plan-card__name { color: rgba(255,255,255,0.55); }
+
+    .plan-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 4px; }
+    .plan-price__currency { font-size: 1rem; font-weight: 700; color: var(--text-muted); }
+    .plan-card--featured .plan-price__currency { color: rgba(255,255,255,0.5); }
+    .plan-price__amount { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-dark); }
+    .plan-card--featured .plan-price__amount { color: var(--white); }
+    .plan-price__period { font-size: 0.875rem; color: var(--text-muted); }
+    .plan-card--featured .plan-price__period { color: rgba(255,255,255,0.45); }
+    .plan-price__free { font-size: 2.25rem; font-weight: 800; color: var(--text-dark); }
+
+    .plan-desc { font-size: 0.8125rem; color: var(--text-muted); margin: 10px 0 24px; line-height: 1.55; }
+    .plan-card--featured .plan-desc { color: rgba(255,255,255,0.5); }
+
+    .plan-divider { height: 1px; background: #E5E7EB; margin: 20px 0; }
+    .plan-card--featured .plan-divider { background: rgba(255,255,255,0.08); }
+
+    .plan-features { display: flex; flex-direction: column; gap: 11px; margin-bottom: 28px; }
+
+    .plan-feature { display: flex; align-items: flex-start; gap: 10px; font-size: 0.875rem; color: var(--text-dark); }
+    .plan-card--featured .plan-feature { color: rgba(255,255,255,0.8); }
+
+    .plan-feature__check {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+    }
+
+    .plan-feature__check--light { background: rgba(16,185,129,0.1); }
+    .plan-feature__check--dark { background: rgba(0,210,255,0.15); }
+    .plan-feature__check svg { width: 11px; height: 11px; }
+
+    /* ============================================
+       FAQ SECTION
+    ============================================ */
+    .faq {
+      padding: 100px 0;
+      background: var(--light-bg);
+    }
+
+    .faq__grid {
+      max-width: 760px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .faq-item {
+      background: var(--white);
+      border: 1.5px solid #E5E7EB;
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .faq-item.open { border-color: rgba(91,94,244,0.3); }
+
+    .faq-item__question {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      background: none;
+      font-family: var(--font);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .faq-item.open .faq-item__question { color: var(--primary); }
+
+    .faq-item__icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: var(--light-bg);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .faq-item.open .faq-item__icon {
+      background: rgba(91,94,244,0.1);
+      transform: rotate(45deg);
+    }
+
+    .faq-item__answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+    }
+
+    .faq-item.open .faq-item__answer {
+      max-height: 200px;
+    }
+
+    .faq-item__answer-inner {
+      padding: 0 24px 20px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ============================================
+       FINAL CTA
+    ============================================ */
+    .cta-section {
+      padding: 100px 0;
+      background: var(--dark-bg);
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(91,94,244,0.18) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .cta-section__inner { position: relative; z-index: 2; }
+    .cta-section h2 { color: var(--white); margin-bottom: 12px; }
+    .cta-section p { color: rgba(255,255,255,0.55); margin-bottom: 36px; }
+
+    .cta-section__actions { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+    /* ============================================
+       FOOTER
+    ============================================ */
+    .footer { background: #060810; border-top: 1px solid rgba(255,255,255,0.06); padding: 64px 0 32px; }
+
+    .footer__top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      gap: 48px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 32px;
+    }
+
+    .footer__brand p { font-size: 0.875rem; color: rgba(255,255,255,0.4); line-height: 1.7; margin: 12px 0 20px; max-width: 260px; }
+    .footer__socials { display: flex; gap: 10px; }
+
+    .footer__social-btn {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .footer__social-btn:hover { background: rgba(91,94,244,0.15); border-color: rgba(91,94,244,0.35); color: var(--white); transform: translateY(-2px); }
+
+    .footer__col h5 { font-size: 0.8125rem; font-weight: 700; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; }
+    .footer__col ul { display: flex; flex-direction: column; gap: 10px; }
+    .footer__col ul a { font-size: 0.875rem; color: rgba(255,255,255,0.4); transition: color 0.2s ease; }
+    .footer__col ul a:hover { color: rgba(255,255,255,0.85); }
+
+    .footer__bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .footer__bottom p { font-size: 0.8125rem; color: rgba(255,255,255,0.25); }
+    .footer__bottom-links { display: flex; gap: 20px; }
+    .footer__bottom-links a { font-size: 0.8125rem; color: rgba(255,255,255,0.25); transition: color 0.2s; }
+    .footer__bottom-links a:hover { color: rgba(255,255,255,0.6); }
+
+    /* ============================================
+       LOGO
+    ============================================ */
+    .unilix-logo-svg { width: 32px; height: 32px; flex-shrink: 0; }
+    .divider-gradient { height: 1px; background: linear-gradient(90deg, transparent, rgba(91,94,244,0.3), transparent); }
+
+    /* ============================================
+       SCROLL REVEAL
+    ============================================ */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ============================================
+       RESPONSIVE
+    ============================================ */
+    @media (max-width: 1024px) {
+      .hero__inner { grid-template-columns: 1fr; gap: 48px; text-align: center; }
+      .hero__content { max-width: 100%; }
+      .hero__actions { justify-content: center; }
+      .hero__visual { max-width: 320px; margin: 0 auto; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .pricing__grid { grid-template-columns: repeat(2, 1fr); max-width: 860px; margin: 0 auto; }
+      .plan-card--featured { transform: scale(1); }
+      .plan-card--featured:hover { transform: translateY(-6px); }
+      .footer__top { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .footer__brand { grid-column: 1 / -1; }
+      .nav__breadcrumb { display: none; }
+      .steps-grid::before { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      :root { --nav-height: 64px; }
+      .nav__cta .btn { display: none; }
+      .hamburger { display: flex; }
+      .hero { padding: calc(var(--nav-height) + 48px) 0 60px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; gap: 28px; }
+      .footer__top { grid-template-columns: 1fr; }
+      .footer__brand { grid-column: 1; }
+      .footer__bottom { flex-direction: column; text-align: center; }
+      .features { padding: 64px 0; }
+      .how-it-works { padding: 64px 0; }
+      .pricing { padding: 64px 0; }
+      .faq { padding: 64px 0; }
+      .cta-section { padding: 64px 0; }
+      .hero-badge { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ==================== NAVIGATION ==================== -->
+  <nav class="nav" id="mainNav" role="navigation" aria-label="Menu principal">
+    <div class="container">
+      <div class="nav__inner">
+        <div style="display:flex;align-items:center;gap:20px;">
+          <a href="index.html" class="nav__logo" aria-label="Unilix - página inicial">
+            <svg class="unilix-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M6 6 L6 20 Q6 26 16 26 Q26 26 26 20 L26 6" stroke="url(#logoGradLF)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+              <circle cx="6" cy="5" r="3" fill="url(#logoGradLF)"/>
+              <circle cx="26" cy="5" r="3" fill="url(#logoGradLF)"/>
+              <circle cx="16" cy="26" r="3" fill="#00D2FF" opacity="0.85"/>
+              <defs>
+                <linearGradient id="logoGradLF" x1="6" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#5B5EF4"/>
+                  <stop offset="100%" stop-color="#00D2FF"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            Unilix
+          </a>
+          <nav class="nav__breadcrumb" aria-label="Breadcrumb">
+            <a href="index.html">Unilix</a>
+            <span aria-hidden="true">/</span>
+            <a href="restaurantes.html">Sistema de Gestão</a>
+            <span aria-hidden="true">/</span>
+            <a href="restaurantes.html">Restaurantes</a>
+            <span aria-hidden="true">/</span>
+            <span class="current">ListaFácil</span>
+          </nav>
+        </div>
+
+        <div class="nav__cta">
+          <a href="#cadastro" class="btn btn-gradient btn-sm btn-gradient-animated">Começar grátis</a>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <ul>
+      <li><a href="restaurantes.html" onclick="closeMobileMenu()">← Sistema de Gestão</a></li>
+      <li><a href="#funcionalidades" onclick="closeMobileMenu()">Funcionalidades</a></li>
+      <li><a href="#como-funciona" onclick="closeMobileMenu()">Como funciona</a></li>
+      <li><a href="#planos" onclick="closeMobileMenu()">Planos</a></li>
+      <li><a href="#faq" onclick="closeMobileMenu()">FAQ</a></li>
+    </ul>
+    <a href="#cadastro" class="btn btn-gradient" style="width:100%;justify-content:center;">Começar grátis</a>
+  </div>
+
+
+  <!-- ==================== HERO ==================== -->
+  <section class="hero" aria-labelledby="heroHeadline">
+    <div class="hero__grid-overlay" aria-hidden="true"></div>
+    <div class="container">
+      <div class="hero__inner">
+        <div class="hero__content">
+          <div class="hero__tag">🛒 Módulo Estoque — Sistema de Gestão Modular</div>
+
+          <h1 class="display-xl hero__headline" id="heroHeadline">
+            <em class="gradient-text">ListaFácil</em> — Controle de<br />
+            compras e estoque para restaurantes
+          </h1>
+
+          <p class="body-lg hero__sub">
+            Crie listas colaborativas, controle o estoque e nunca mais perca uma compra. Simples, rápido e funciona no celular.
+          </p>
+
+          <div class="hero__actions">
+            <a href="#cadastro" class="btn btn-gradient btn-lg">
+              Começar grátis
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href="#planos" class="btn btn-outline-light btn-lg">Ver planos</a>
+          </div>
+        </div>
+
+        <!-- Phone Visual -->
+        <div class="hero__visual">
+          <div class="hero-badge" aria-hidden="true">
+            <span class="hero-badge__icon">👥</span>
+            <div class="hero-badge__text">
+              <strong>3 usuários online</strong>
+              <span>Editando agora</span>
+            </div>
+          </div>
+
+          <div class="phone-mockup" role="img" aria-label="Preview do app ListaFácil">
+            <div class="phone-notch" aria-hidden="true">
+              <div class="phone-notch-bar"></div>
+            </div>
+            <div class="phone-content">
+              <div class="phone-header">
+                <h4>🛒 ListaFácil</h4>
+                <div class="phone-live">
+                  <span class="phone-live-dot"></span>
+                  Ao vivo
+                </div>
+              </div>
+              <div class="phone-list-label">Lista da Semana — Cozinha</div>
+
+              <div class="phone-item">
+                <div class="phone-checkbox checked" aria-label="Item marcado"></div>
+                <span class="phone-item-text done">Arroz tipo 1 — 5kg</span>
+                <span class="phone-item-qty">×3</span>
+              </div>
+              <div class="phone-item">
+                <div class="phone-checkbox checked" aria-label="Item marcado"></div>
+                <span class="phone-item-text done">Feijão carioca</span>
+                <span class="phone-item-qty">×2</span>
+              </div>
+              <div class="phone-item">
+                <div class="phone-checkbox" aria-label="Item não marcado"></div>
+                <span class="phone-item-text">Óleo de soja 900ml</span>
+                <span class="phone-item-qty">×4</span>
+              </div>
+              <div class="phone-item">
+                <div class="phone-checkbox" aria-label="Item não marcado"></div>
+                <span class="phone-item-text">Açúcar refinado 1kg</span>
+                <span class="phone-item-qty">×6</span>
+              </div>
+              <div class="phone-item">
+                <div class="phone-checkbox" aria-label="Item não marcado"></div>
+                <span class="phone-item-text">Leite integral UHT</span>
+                <span class="phone-item-qty">×12</span>
+              </div>
+              <div class="phone-item">
+                <div class="phone-checkbox" aria-label="Item não marcado"></div>
+                <span class="phone-item-text">Café torrado 500g</span>
+                <span class="phone-item-qty">×3</span>
+              </div>
+
+              <div class="phone-users" aria-hidden="true">
+                <div class="phone-avatar" style="background:linear-gradient(135deg,#5B5EF4,#00D2FF);">A</div>
+                <div class="phone-avatar" style="background:linear-gradient(135deg,#10B981,#06B6D4);">M</div>
+                <div class="phone-avatar" style="background:linear-gradient(135deg,#F59E0B,#EF4444);">J</div>
+                <span class="phone-users-text">3 editando agora</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== FEATURES ==================== -->
+  <section class="features" id="funcionalidades" aria-labelledby="featuresTitle">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag section-tag--light">Funcionalidades</div>
+        <h2 class="display-lg" id="featuresTitle">Tudo que você precisa<br /><em class="gradient-text">para controlar o estoque</em></h2>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal reveal-delay-1">
+          <div class="feature-card__icon">✅</div>
+          <h4>Listas colaborativas em tempo real</h4>
+          <p>Toda a equipe trabalha na mesma lista, ao mesmo tempo. Alterações aparecem instantaneamente.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-2">
+          <div class="feature-card__icon">📦</div>
+          <h4>Controle de estoque integrado</h4>
+          <p>Vincule suas listas ao estoque e monitore entradas, saídas e quantidades mínimas automaticamente.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-3">
+          <div class="feature-card__icon">🔔</div>
+          <h4>Notificações e alertas</h4>
+          <p>Receba avisos quando o estoque atingir o nível mínimo ou quando um item for marcado na lista.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-4">
+          <div class="feature-card__icon">📊</div>
+          <h4>Relatórios de compras</h4>
+          <p>Acompanhe o histórico de consumo, compare períodos e tome decisões de compra mais precisas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-gradient" aria-hidden="true"></div>
+
+  <!-- ==================== HOW IT WORKS ==================== -->
+  <section class="how-it-works" id="como-funciona" aria-labelledby="howTitle">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag section-tag--light">Como funciona</div>
+        <h2 class="display-lg" id="howTitle">Pronto em<br /><em class="gradient-text">3 passos simples</em></h2>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step reveal reveal-delay-1">
+          <div class="step__number">1</div>
+          <h4>Crie sua conta</h4>
+          <p>Cadastre-se gratuitamente em menos de 2 minutos. Sem cartão de crédito necessário.</p>
+        </div>
+        <div class="step reveal reveal-delay-2">
+          <div class="step__number">2</div>
+          <h4>Monte sua lista</h4>
+          <p>Adicione os produtos do seu estoque e crie sua primeira lista de compras personalizada.</p>
+        </div>
+        <div class="step reveal reveal-delay-3">
+          <div class="step__number">3</div>
+          <h4>Colabore com a equipe</h4>
+          <p>Convide sua equipe, distribua as tarefas e trabalhem juntos em tempo real de qualquer dispositivo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-gradient" aria-hidden="true"></div>
+
+  <!-- ==================== PRICING ==================== -->
+  <section class="pricing" id="planos" aria-labelledby="pricingTitle">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag section-tag--light">Planos e Preços</div>
+        <h2 class="display-lg" id="pricingTitle">Comece grátis,<br /><em class="gradient-text">cresça quando quiser</em></h2>
+        <p class="body-lg">Sem surpresas na fatura. Cancele quando quiser.</p>
+      </div>
+
+      <div class="pricing__grid">
+        <!-- Gratuito -->
+        <div class="plan-card reveal reveal-delay-1">
+          <div class="plan-card__name">Gratuito</div>
+          <div class="plan-price">
+            <span class="plan-price__free">Grátis</span>
+          </div>
+          <p class="plan-desc">Para quem quer experimentar o ListaFácil sem nenhum compromisso.</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              1 usuário
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Até 3 listas ativas
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Sem cartão de crédito
+            </li>
+          </ul>
+          <a href="#cadastro" class="btn btn-outline-dark" style="width:100%;justify-content:center;">Criar conta grátis</a>
+        </div>
+
+        <!-- Starter -->
+        <div class="plan-card reveal reveal-delay-2" style="order: unset;">
+          <div class="plan-popular" style="background: linear-gradient(135deg,#F59E0B,#EF4444); color:#fff;">🔥 Promoção especial</div>
+          <div class="plan-card__name">Starter</div>
+          <div class="plan-price" style="flex-direction:column; align-items:flex-start; gap:2px;">
+            <span style="font-size:1rem; color:var(--text-muted); text-decoration:line-through; font-weight:500;">R$ 29,90/mês</span>
+            <div style="display:flex; align-items:baseline; gap:4px;">
+              <span class="plan-price__currency">R$</span>
+              <span class="plan-price__amount">19<small style="font-size:1.5rem">,90</small></span>
+              <span class="plan-price__period">/mês</span>
+            </div>
+          </div>
+          <p class="plan-desc">Para quem quer começar com mais recursos e colaboração em equipe.</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Até 3 usuários
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Até 5 listas ativas
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Notificações básicas
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Suporte por email
+            </li>
+          </ul>
+          <a href="https://pay.kiwify.com.br/EM65CqN" data-plan="starter" class="btn btn-gradient" style="width:100%;justify-content:center;">Assinar Starter</a>
+        </div>
+
+        <!-- Pro (featured) -->
+        <div class="plan-card plan-card--featured reveal reveal-delay-3">
+          <div class="plan-popular">Mais popular</div>
+          <div class="plan-card__name">Pro</div>
+          <div class="plan-price">
+            <span class="plan-price__currency">R$</span>
+            <span class="plan-price__amount">49<small style="font-size:1.5rem">,90</small></span>
+            <span class="plan-price__period">/mês</span>
+          </div>
+          <p class="plan-desc">Para equipes que precisam de colaboração eficiente e controle total.</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--dark">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#00D2FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Até 10 usuários
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--dark">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#00D2FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Listas ilimitadas
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--dark">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#00D2FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Notificações avançadas
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--dark">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#00D2FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Relatórios mensais
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--dark">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#00D2FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Suporte prioritário
+            </li>
+          </ul>
+          <a href="https://pay.kiwify.com.br/EM65CqN" class="btn btn-gradient btn-gradient-animated" style="width:100%;justify-content:center;">Assinar Pro</a>
+        </div>
+
+        <!-- Gold -->
+        <div class="plan-card reveal reveal-delay-4">
+          <div class="plan-card__name">Gold</div>
+          <div class="plan-price">
+            <span class="plan-price__currency">R$</span>
+            <span class="plan-price__amount">99<small style="font-size:1.5rem">,90</small></span>
+            <span class="plan-price__period">/mês</span>
+          </div>
+          <p class="plan-desc">Para negócios em expansão com integrações, API e suporte dedicado 24h.</p>
+          <div class="plan-divider"></div>
+          <ul class="plan-features">
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Usuários ilimitados
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Tudo do Pro
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              API de integração
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Suporte 24/7
+            </li>
+            <li class="plan-feature">
+              <span class="plan-feature__check plan-feature__check--light">
+                <svg viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2 5.5l2.5 2.5L9 3" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              Personalização da marca
+            </li>
+          </ul>
+          <a href="https://pay.kiwify.com.br/EM65CqN" class="btn btn-outline-dark" style="width:100%;justify-content:center;">Assinar Gold</a>
+        </div>
+      </div>
+
+      <div style="text-align:center; margin-top: 40px;" class="reveal">
+        <p style="font-size: 0.875rem; color: var(--text-muted);">
+          🔒 Pagamento seguro &nbsp;·&nbsp; Cancele a qualquer momento &nbsp;·&nbsp; Sem taxa de adesão
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-gradient" aria-hidden="true"></div>
+
+  <!-- ==================== CADASTRO GRATUITO ==================== -->
+  <section style="padding: 80px 0; background: var(--light-bg);" id="cadastro" aria-labelledby="cadastroTitle">
+    <div class="container">
+      <div class="section-header reveal" style="margin-bottom:40px;">
+        <div class="section-tag section-tag--light">Plano Gratuito</div>
+        <h2 class="display-md" id="cadastroTitle">Crie sua conta grátis<br /><em class="gradient-text">e comece agora mesmo</em></h2>
+        <p class="body-lg" style="color:var(--text-muted); margin-top:10px;">Sem cartão de crédito. Sem compromisso. Acesso imediato.</p>
+      </div>
+
+      <div style="max-width:440px; margin:0 auto;" class="reveal">
+        <div style="background:var(--white); border-radius:var(--radius-lg); padding:40px 36px 32px; border:1.5px solid #E5E7EB; box-shadow: 0 8px 32px rgba(91,94,244,0.08);">
+
+          <!-- Estado: formulário -->
+          <div id="cadastroInicio">
+
+            <!-- Abas Login / Cadastro -->
+            <div style="display:flex; border:1.5px solid #E5E7EB; border-radius:10px; overflow:hidden; margin-bottom:24px;">
+              <button id="tabCadastro" onclick="trocarAba('cadastro')" style="flex:1; padding:10px; border:none; background:var(--primary); color:#fff; font-family:var(--font); font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s;">Criar conta</button>
+              <button id="tabLogin" onclick="trocarAba('login')" style="flex:1; padding:10px; border:none; background:transparent; color:var(--text-muted); font-family:var(--font); font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s;">Já tenho conta</button>
+            </div>
+
+            <!-- Botão Google -->
+            <button onclick="loginGoogle()" style="
+              width:100%; display:flex; align-items:center; justify-content:center; gap:12px;
+              padding:12px 20px; border-radius:10px; border:1.5px solid #DADCE0;
+              background:#fff; font-family:var(--font); font-size:0.9375rem; font-weight:600;
+              color:#3C4043; cursor:pointer; transition:all 0.2s ease;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom:20px;"
+              onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.14)'"
+              onmouseout="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.08)'">
+              <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.86l6.1-6.1C34.46 3.09 29.53 1 24 1 14.82 1 7.07 6.48 3.6 14.22l7.1 5.52C12.4 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.74H24v8.98h12.67c-.55 2.94-2.2 5.42-4.68 7.1l7.16 5.56C43.44 37.76 46.52 31.6 46.52 24.5z"/><path fill="#FBBC05" d="M10.7 28.26A14.54 14.54 0 0 1 9.5 24c0-1.48.26-2.9.7-4.26l-7.1-5.52A23.94 23.94 0 0 0 0 24c0 3.86.92 7.5 2.56 10.72l8.14-6.46z"/><path fill="#34A853" d="M24 47c5.53 0 10.17-1.83 13.56-4.96l-7.16-5.56c-1.82 1.22-4.15 1.96-6.4 1.96-6.26 0-11.6-4.22-13.3-9.92l-8.14 6.46C7.07 41.52 14.82 47 24 47z"/></svg>
+              Continuar com Google
+            </button>
+
+            <!-- Divisor -->
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+              <div style="flex:1; height:1px; background:#E5E7EB;"></div>
+              <span style="font-size:0.8rem; color:var(--text-muted);">ou use seu e-mail</span>
+              <div style="flex:1; height:1px; background:#E5E7EB;"></div>
+            </div>
+
+            <!-- Campos extras só no cadastro -->
+            <div id="camposCadastro">
+              <div style="margin-bottom:14px;">
+                <input type="text" id="inputNome" placeholder="Nome completo" style="width:100%; padding:12px 16px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.9375rem; font-family:var(--font); outline:none; transition:border-color 0.2s; color:var(--text-dark);" onfocus="this.style.borderColor='#5B5EF4'" onblur="this.style.borderColor='#E5E7EB'" />
+              </div>
+              <div style="margin-bottom:14px;">
+                <input type="tel" id="inputTelefone" placeholder="Telefone / WhatsApp" style="width:100%; padding:12px 16px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.9375rem; font-family:var(--font); outline:none; transition:border-color 0.2s; color:var(--text-dark);" onfocus="this.style.borderColor='#5B5EF4'" onblur="this.style.borderColor='#E5E7EB'" />
+              </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+              <input type="email" id="inputEmail" placeholder="E-mail" style="width:100%; padding:12px 16px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.9375rem; font-family:var(--font); outline:none; transition:border-color 0.2s; color:var(--text-dark);" onfocus="this.style.borderColor='#5B5EF4'" onblur="this.style.borderColor='#E5E7EB'" />
+            </div>
+            <div style="margin-bottom:20px;">
+              <input type="password" id="inputSenha" placeholder="Senha (mín. 6 caracteres)" style="width:100%; padding:12px 16px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.9375rem; font-family:var(--font); outline:none; transition:border-color 0.2s; color:var(--text-dark);" onfocus="this.style.borderColor='#5B5EF4'" onblur="this.style.borderColor='#E5E7EB'" />
+            </div>
+
+            <div id="cadastroError" style="display:none; background:#FEF2F2; border:1px solid #FECACA; border-radius:8px; padding:10px 14px; font-size:0.875rem; color:#DC2626; margin-bottom:14px; text-align:center;"></div>
+
+            <button id="btnSubmit" onclick="submitForm()" class="btn btn-gradient btn-gradient-animated" style="width:100%; justify-content:center; font-size:1rem; padding:14px 28px;">
+              Criar conta gratuita
+            </button>
+
+            <p style="text-align:center; font-size:0.775rem; color:var(--text-muted); margin-top:16px; line-height:1.6;">
+              Ao continuar, você concorda com os <a href="#" style="color:var(--primary);">Termos de Uso</a> e a <a href="#" style="color:var(--primary);">Política de Privacidade</a>. 🔒
+            </p>
+          </div>
+
+          <!-- Estado: carregando -->
+          <div id="cadastroCarregando" style="display:none; text-align:center; padding:32px 0;">
+            <div style="width:44px;height:44px;border:3px solid #E5E7EB;border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+            <p style="color:var(--text-muted); font-size:0.9375rem;" id="loadingMsg">Criando sua conta…</p>
+          </div>
+
+          <!-- Estado: sucesso -->
+          <div id="cadastroSucesso" style="display:none; text-align:center; padding:16px 0;">
+            <div style="font-size:3rem; margin-bottom:12px;">🎉</div>
+            <h3 style="font-size:1.25rem; font-weight:700; color:var(--text-dark); margin-bottom:8px;" id="sucessoTitulo">Conta criada!</h3>
+            <p style="color:var(--text-muted); font-size:0.9375rem;" id="sucessoDesc">Verifique seu e-mail para confirmar o cadastro.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+
+
+  <div class="divider-gradient" aria-hidden="true"></div>
+
+  <!-- ==================== FAQ ==================== -->
+  <section class="faq" id="faq" aria-labelledby="faqTitle">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-tag section-tag--light">Perguntas Frequentes</div>
+        <h2 class="display-lg" id="faqTitle">Dúvidas <em class="gradient-text">frequentes</em></h2>
+      </div>
+
+      <div class="faq__grid">
+
+        <div class="faq-item reveal reveal-delay-1">
+          <button class="faq-item__question" aria-expanded="false">
+            Preciso de cartão para o plano Grátis?
+            <span class="faq-item__icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </button>
+          <div class="faq-item__answer" role="region">
+            <div class="faq-item__answer-inner">
+              Não! O plano Starter é 100% gratuito e não exige nenhum dado de pagamento. Basta criar sua conta com email e senha e começar a usar imediatamente.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-2">
+          <button class="faq-item__question" aria-expanded="false">
+            Posso mudar de plano depois?
+            <span class="faq-item__icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </button>
+          <div class="faq-item__answer" role="region">
+            <div class="faq-item__answer-inner">
+              Sim, a qualquer momento. Você pode fazer upgrade ou downgrade do seu plano sem perda de dados. O valor é ajustado proporcionalmente no próximo ciclo de cobrança.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-3">
+          <button class="faq-item__question" aria-expanded="false">
+            Funciona no celular?
+            <span class="faq-item__icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </button>
+          <div class="faq-item__answer" role="region">
+            <div class="faq-item__answer-inner">
+              Sim! O ListaFácil é totalmente responsivo e funciona em qualquer dispositivo — celular, tablet ou computador. Não precisa instalar nenhum aplicativo.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-4">
+          <button class="faq-item__question" aria-expanded="false">
+            Os dados ficam seguros?
+            <span class="faq-item__icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </button>
+          <div class="faq-item__answer" role="region">
+            <div class="faq-item__answer-inner">
+              Absolutamente. Todos os dados são criptografados em trânsito e em repouso. Seguimos as melhores práticas de segurança e somos conformes com a LGPD.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal reveal-delay-4">
+          <button class="faq-item__question" aria-expanded="false">
+            Tem período de teste para os planos pagos?
+            <span class="faq-item__icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+          </button>
+          <div class="faq-item__answer" role="region">
+            <div class="faq-item__answer-inner">
+              Sim! Oferecemos 14 dias de teste gratuito em todos os planos pagos. Se você não ficar satisfeito, reembolsamos integralmente sem perguntas.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="divider-gradient" aria-hidden="true"></div>
+
+  <!-- ==================== FINAL CTA ==================== -->
+  <section class="cta-section" aria-labelledby="ctaTitle">
+    <div class="container">
+      <div class="cta-section__inner">
+        <div class="section-tag section-tag--dark" style="display:inline-flex; margin-bottom:20px;">
+          🚀 Comece agora
+        </div>
+        <h2 class="display-lg reveal" id="ctaTitle">
+          Pronto para simplificar
+          <br />
+          <em class="gradient-text">seu estoque?</em>
+        </h2>
+        <p class="body-lg reveal">Junte-se a centenas de restaurantes que já usam o ListaFácil.</p>
+        <div class="cta-section__actions reveal">
+          <a href="#cadastro" class="btn btn-gradient btn-lg">
+            Começar grátis agora
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="restaurantes.html" class="btn btn-ghost-dark btn-lg">← Ver outros módulos</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="nav__logo" aria-label="Unilix">
+            <svg class="unilix-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M6 6 L6 20 Q6 26 16 26 Q26 26 26 20 L26 6" stroke="url(#logoGradLF2)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+              <circle cx="6" cy="5" r="3" fill="url(#logoGradLF2)"/>
+              <circle cx="26" cy="5" r="3" fill="url(#logoGradLF2)"/>
+              <circle cx="16" cy="26" r="3" fill="#00D2FF" opacity="0.85"/>
+              <defs>
+                <linearGradient id="logoGradLF2" x1="6" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#5B5EF4"/>
+                  <stop offset="100%" stop-color="#00D2FF"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            Unilix
+          </a>
+          <p>Unifique. Automatize. Cresça.<br />A plataforma que conecta todos os setores do seu negócio.</p>
+          <div class="footer__socials" role="list" aria-label="Redes sociais">
+            <a href="#" class="footer__social-btn" aria-label="Instagram" role="listitem">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="3"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+            </a>
+            <a href="#" class="footer__social-btn" aria-label="LinkedIn" role="listitem">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer__col">
+          <h5>ListaFácil</h5>
+          <ul>
+            <li><a href="#funcionalidades">Funcionalidades</a></li>
+            <li><a href="#como-funciona">Como funciona</a></li>
+            <li><a href="#planos">Planos</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <h5>Sistema de Gestão</h5>
+          <ul>
+            <li><a href="restaurantes.html">Restaurantes</a></li>
+            <li><a href="#">PDV <small style="opacity:.5">(em breve)</small></a></li>
+            <li><a href="#">Financeiro <small style="opacity:.5">(em breve)</small></a></li>
+            <li><a href="#">Pessoal <small style="opacity:.5">(em breve)</small></a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <h5>Suporte</h5>
+          <ul>
+            <li><a href="#">Central de Ajuda</a></li>
+            <li><a href="#">Documentação</a></li>
+            <li><a href="/cdn-cgi/l/email-protection#c5a6aaabb1a4b1aa85b0abaca9acbdeba6aaa8eba7b7">Contato</a></li>
+            <li><a href="#">Status</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <h5>Legal</h5>
+          <ul>
+            <li><a href="#">Termos de uso</a></li>
+            <li><a href="#">Privacidade</a></li>
+            <li><a href="#">LGPD</a></li>
+            <li><a href="#">Cookies</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p>© 2026 Unilix. Todos os direitos reservados. Feito com 💜 no Brasil.</p>
+        <div class="footer__bottom-links">
+          <a href="#">Termos</a>
+          <a href="#">Privacidade</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    // ─── NAV SCROLL ───────────────────────────────────────
+    const nav = document.getElementById('mainNav');
+    const handleScroll = () => nav.classList.toggle('scrolled', window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    // ─── HAMBURGER ────────────────────────────────────────
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    hamburger.addEventListener('click', () => {
+      const isOpen = hamburger.classList.toggle('open');
+      mobileMenu.classList.toggle('open', isOpen);
+      hamburger.setAttribute('aria-expanded', isOpen.toString());
+      mobileMenu.setAttribute('aria-hidden', (!isOpen).toString());
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+
+    function closeMobileMenu() {
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      mobileMenu.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', (e) => {
+      if (mobileMenu.classList.contains('open') && !mobileMenu.contains(e.target) && !hamburger.contains(e.target)) {
+        closeMobileMenu();
+      }
+    });
+
+    // ─── SCROLL REVEAL ────────────────────────────────────
+    const revealObserver = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      }),
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+    document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+    // ─── FAQ ACCORDION ────────────────────────────────────
+    document.querySelectorAll('.faq-item__question').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+
+        // Close all
+        document.querySelectorAll('.faq-item').forEach((i) => {
+          i.classList.remove('open');
+          i.querySelector('.faq-item__question').setAttribute('aria-expanded', 'false');
+        });
+
+        // Open clicked if it was closed
+        if (!isOpen) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+
+    // ─── REDIRECT SE JÁ LOGADO ────────────────────────────
+    (function() {
+      try {
+        const email = localStorage.getItem('lf_last_email');
+        if (!email) return;
+        // Só redireciona se o usuário explicitamente já se cadastrou antes
+        // Mostra banner em vez de redirecionar forçado
+        fetch('https://api.unilix.tech/buscar-cliente', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        }).then(r => r.json()).then(d => {
+          if (!d.ok || !d.url) return;
+          // Cria banner não-intrusivo no topo
+          const bar = document.createElement('div');
+          bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#5B5EF4,#00D2FF);padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;font-family:inherit;font-size:14px;font-weight:600;color:#fff;box-shadow:0 2px 12px rgba(91,94,244,0.4)';
+          bar.innerHTML = `🛒 Você já tem uma conta! <a href="${d.url}" style="color:#fff;text-decoration:underline;font-weight:800">Acessar meu ListaFácil →</a> <button onclick="this.parentElement.remove();localStorage.removeItem('lf_last_email')" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;margin-left:8px">✕</button>`;
+          document.body.prepend(bar);
+        }).catch(() => {});
+      } catch(e) {}
+    })();
+
+    // ─── PRICING BUTTONS (Lemon Squeezy) ──────────────────
+    document.querySelectorAll('[data-plan]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const plan = btn.getAttribute('data-plan');
+
+        // ⚠️ Substitua os IDs abaixo pelos IDs reais do seu Lemon Squeezy
+        // Encontre em: lemonSqueezy.com > Store > Products > seu produto > Share
+        const urls = {
+          starter: 'https://unilix.lemonsqueezy.com/checkout/buy/COLOQUE_ID_STARTER_AQUI',
+          pro:     'https://unilix.lemonsqueezy.com/checkout/buy/COLOQUE_ID_PRO_AQUI',
+          gold:    'https://unilix.lemonsqueezy.com/checkout/buy/COLOQUE_ID_GOLD_AQUI',
+        };
+
+        // URL de sucesso — envia de volta para nossa página com o plano
+        const successUrl = encodeURIComponent(
+          window.location.origin + '/sucesso.html?plan=' + plan
+        );
+
+        if (urls[plan]) {
+          // Abre o checkout do Lemon Squeezy com redirect de sucesso
+          window.location.href = urls[plan] + '?checkout[success_url]=' + successUrl;
+        }
+      });
+    });
+    // ─── SUPABASE AUTH ────────────────────────────────────
+    const SUPABASE_URL  = 'https://zlxsbnrtgieclpypztow.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpseHNibnJ0Z2llY2xweXB6dG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTEwODQsImV4cCI6MjA4OTIyNzA4NH0.Tg45Vjofb-NMqDtPCTw0pbFmxQbUBotiNAKknrLtSX0';
+
+    let supabase = null;
+
+    // Carrega o SDK do Supabase dinamicamente
+    async function initSupabase() {
+      if (supabase) return supabase;
+      const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+      return supabase;
+    }
+
+    let abaAtual = 'cadastro';
+
+    function trocarAba(aba) {
+      abaAtual = aba;
+      const tabC = document.getElementById('tabCadastro');
+      const tabL = document.getElementById('tabLogin');
+      const camposExtras = document.getElementById('camposCadastro');
+      const btnSubmit = document.getElementById('btnSubmit');
+
+      if (aba === 'cadastro') {
+        tabC.style.background = 'var(--primary)';
+        tabC.style.color = '#fff';
+        tabL.style.background = 'transparent';
+        tabL.style.color = 'var(--text-muted)';
+        camposExtras.style.display = 'block';
+        btnSubmit.textContent = 'Criar conta gratuita';
+      } else {
+        tabL.style.background = 'var(--primary)';
+        tabL.style.color = '#fff';
+        tabC.style.background = 'transparent';
+        tabC.style.color = 'var(--text-muted)';
+        camposExtras.style.display = 'none';
+        btnSubmit.textContent = 'Entrar';
+      }
+      document.getElementById('cadastroError').style.display = 'none';
+    }
+
+    function mostrarCarregando(msg) {
+      document.getElementById('cadastroInicio').style.display = 'none';
+      document.getElementById('cadastroCarregando').style.display = 'block';
+      document.getElementById('cadastroSucesso').style.display = 'none';
+      document.getElementById('loadingMsg').textContent = msg || 'Aguarde…';
+    }
+
+    function mostrarSucesso(titulo, desc) {
+      document.getElementById('cadastroInicio').style.display = 'none';
+      document.getElementById('cadastroCarregando').style.display = 'none';
+      document.getElementById('cadastroSucesso').style.display = 'block';
+      document.getElementById('sucessoTitulo').textContent = titulo;
+      document.getElementById('sucessoDesc').textContent = desc;
+    }
+
+    function mostrarErro(msg) {
+      document.getElementById('cadastroInicio').style.display = 'block';
+      document.getElementById('cadastroCarregando').style.display = 'none';
+      document.getElementById('cadastroSucesso').style.display = 'none';
+      const el = document.getElementById('cadastroError');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    async function loginGoogle() {
+      mostrarCarregando('Redirecionando para o Google…');
+      const sb = await initSupabase();
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: 'https://unilix.tech/callback.html', queryParams: { prompt: 'select_account', access_type: 'offline' } }
+      });
+      if (error) mostrarErro('Erro ao conectar com Google: ' + error.message);
+    }
+
+    async function submitForm() {
+      const email = document.getElementById('inputEmail').value.trim();
+      const senha = document.getElementById('inputSenha').value;
+      const errorEl = document.getElementById('cadastroError');
+      errorEl.style.display = 'none';
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        mostrarErro('Informe um e-mail válido.'); return;
+      }
+      if (!senha || senha.length < 6) {
+        mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return;
+      }
+
+      const sb = await initSupabase();
+
+      if (abaAtual === 'cadastro') {
+        const nome     = document.getElementById('inputNome').value.trim();
+        const telefone = document.getElementById('inputTelefone').value.trim();
+        if (!nome) { mostrarErro('Informe seu nome.'); return; }
+
+        mostrarCarregando('Criando sua conta…');
+        const { data, error } = await sb.auth.signUp({
+          email, password: senha,
+          options: { data: { full_name: nome, phone: telefone } }
+        });
+        if (error) { mostrarErro(error.message); return; }
+
+        // Salva perfil extra na tabela profiles (crie no Supabase se não existir)
+        if (data.user) {
+          await sb.from('profiles').upsert({
+            id: data.user.id, full_name: nome, phone: telefone, plan: 'free'
+          });
+        }
+        mostrarSucesso('Conta criada! 🎉', 'Verifique seu e-mail para confirmar o cadastro e acessar o ListaFácil.');
+
+      } else {
+        mostrarCarregando('Entrando…');
+        const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+        if (error) { mostrarErro('E-mail ou senha incorretos.'); return; }
+        mostrarSucesso('Bem-vindo de volta! ✅', 'Login realizado com sucesso. Redirecionando…');
+        setTimeout(() => { window.location.href = 'https://unilix.tech'; }, 2000);
+      }
+    }
+
+    // Verifica sessão ativa — mostra banner, não redireciona forçado
+    (async () => {
+      try {
+        const sb = await initSupabase();
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) return;
+        const email = session.user.email;
+        const resp = await fetch('https://api.unilix.tech/buscar-cliente', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const r = await resp.json();
+        if (!r.ok || !r.url) return;
+        // Banner não-intrusivo
+        const bar = document.createElement('div');
+        bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#5B5EF4,#00D2FF);padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;font-family:inherit;font-size:14px;font-weight:600;color:#fff;box-shadow:0 2px 12px rgba(91,94,244,0.4)';
+        bar.innerHTML = `🛒 Você já tem uma conta! <a href="${r.url}" style="color:#fff;text-decoration:underline;font-weight:800">Acessar meu ListaFácil →</a> <button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;margin-left:8px">✕</button>`;
+        document.body.prepend(bar);
+      } catch(e) {}
+    })();
+  </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"ab47c0da69884ca083324245cc6e550e","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

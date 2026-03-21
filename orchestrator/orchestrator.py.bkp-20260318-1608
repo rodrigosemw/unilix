@@ -1,0 +1,398 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import subprocess, os, secrets, hmac, hashlib, base64, json, shutil, re, urllib.request
+from datetime import datetime
+
+app = Flask(__name__)
+CORS(app)
+
+CLIENTES_DIR   = os.environ.get('CLIENTES_DIR', '/clientes')
+DOMAIN         = os.environ.get('DOMAIN', 'unilix.tech')
+WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'changeme')
+MASTER_URL     = os.environ.get('MASTER_URL', '')
+MASTER_KEY     = os.environ.get('MASTER_KEY', '')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+EMAIL_FROM     = os.environ.get('EMAIL_FROM', 'noreply@unilix.tech')
+
+from datetime import datetime as _dt_cls
+
+def _slug_exists_master(slug):
+    """Verifica se slug já existe no Supabase master."""
+    if not MASTER_URL or not MASTER_KEY:
+        return False
+    try:
+        req = urllib.request.Request(
+            f'{MASTER_URL}/rest/v1/clientes?subdominio=eq.{slug}&select=id',
+            headers={
+                'apikey': MASTER_KEY,
+                'Authorization': f'Bearer {MASTER_KEY}',
+            }
+        )
+        with urllib.request.urlopen(req, timeout=3) as r:
+            return len(json.loads(r.read())) > 0
+    except:
+        return False
+
+
+
+def gerar_jwt(secret, role='anon'):
+    def b64url(data):
+        if isinstance(data, str): data = data.encode()
+        return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
+    header  = b64url(json.dumps({'alg':'HS256','typ':'JWT'}, separators=(',',':')))
+    payload = b64url(json.dumps({'role': role}, separators=(',',':')))
+    msg = f'{header}.{payload}'
+    sig = b64url(hmac.new(secret.encode(), msg.encode(), hashlib.sha256).digest())
+    return f'{msg}.{sig}'
+
+def gerar_hash(senha):
+    import bcrypt
+    return bcrypt.hashpw(senha.encode(), bcrypt.gensalt(10)).decode()
+
+def enviar_email_boas_vindas(nome, email, url, senha):
+    if not RESEND_API_KEY:
+        print('[EMAIL] RESEND_API_KEY não configurada — email não enviado')
+        return
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#F5F7FF;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F7FF;padding:40px 0;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(91,94,244,0.10);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#5B5EF4,#00D2FF);padding:36px 40px;text-align:center;">
+            <h1 style="margin:0;color:#fff;font-size:1.75rem;font-weight:800;letter-spacing:-0.02em;">🛒 ListaFácil</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:0.95rem;">by Unilix</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px 40px 32px;">
+            <h2 style="margin:0 0 8px;color:#111827;font-size:1.25rem;font-weight:700;">Olá, {nome}! 🎉</h2>
+            <p style="margin:0 0 24px;color:#6B7280;line-height:1.7;">
+              Sua conta no <strong>ListaFácil</strong> foi criada com sucesso. Agora você pode controlar listas de compras e estoque do seu restaurante de qualquer lugar.
+            </p>
+
+            <!-- Credenciais -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#F5F7FF;border-radius:12px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:24px 28px;">
+                  <p style="margin:0 0 16px;color:#111827;font-weight:700;font-size:0.9375rem;">📋 Seus dados de acesso:</p>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:6px 0;color:#6B7280;font-size:0.875rem;width:100px;">🔗 Endereço</td>
+                      <td style="padding:6px 0;"><a href="{url}" style="color:#5B5EF4;font-weight:600;text-decoration:none;">{url}</a></td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;color:#6B7280;font-size:0.875rem;">👤 Login</td>
+                      <td style="padding:6px 0;color:#111827;font-weight:600;">admin</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;color:#6B7280;font-size:0.875rem;">🔑 Senha</td>
+                      <td style="padding:6px 0;">
+                        <code style="background:#E5E7EB;padding:3px 10px;border-radius:6px;font-size:0.9rem;color:#111827;font-weight:700;">{senha}</code>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA -->
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center">
+                  <a href="{url}" style="display:inline-block;background:linear-gradient(135deg,#5B5EF4,#00D2FF);color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:700;font-size:0.9375rem;">
+                    Acessar o ListaFácil →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:28px 0 0;color:#6B7280;font-size:0.8125rem;line-height:1.6;">
+              Guarde sua senha em local seguro. Se precisar de ajuda, responda este email.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 40px;border-top:1px solid #E5E7EB;text-align:center;">
+            <p style="margin:0;color:#9CA3AF;font-size:0.8rem;">© 2026 Unilix. Feito com 💜 no Brasil.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+"""
+
+    payload = json.dumps({
+        'from': f'ListaFácil <{EMAIL_FROM}>',
+        'to': [email],
+        'subject': f'🛒 Sua conta no ListaFácil está pronta, {nome}!',
+        'html': html
+    }).encode()
+
+    req = urllib.request.Request(
+        'https://api.resend.com/emails',
+        data=payload,
+        headers={
+            'Authorization': f'Bearer {RESEND_API_KEY}',
+            'Content-Type': 'application/json'
+        },
+        method='POST'
+    )
+    try:
+        resultado = subprocess.run(
+            ['python3', '/host/send_email.py', json.dumps({
+                'email': email,
+                'subject': f'🛒 Sua conta no ListaFácil está pronta, {nome}!',
+                'html': html
+            })],
+            capture_output=True, text=True
+        )
+        print(f'[EMAIL] {resultado.stdout} {resultado.stderr}')
+    except Exception as e:
+        print(f'[EMAIL] Erro ao enviar para {email}: {e}')
+
+def registrar_master(cliente_id, nome, email, plano, subdominio, container_name):
+    if not MASTER_URL or not MASTER_KEY:
+        return
+    try:
+        payload = json.dumps({
+            'nome': nome, 'email': email, 'plano_id': plano,
+            'status': 'ativo', 'subdominio': subdominio
+        }).encode()
+        req = urllib.request.Request(
+            f'{MASTER_URL}/rest/v1/clientes',
+            data=payload,
+            headers={
+                'apikey': MASTER_KEY,
+                'Authorization': f'Bearer {MASTER_KEY}',
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            }, method='POST'
+        )
+        with urllib.request.urlopen(req) as r:
+            cliente = json.loads(r.read())[0]
+
+        payload2 = json.dumps({
+            'cliente_id': cliente['id'],
+            'container_name': container_name,
+            'status': 'ativo',
+            'supabase_url': f'https://{subdominio}.{DOMAIN}'
+        }).encode()
+        req2 = urllib.request.Request(
+            f'{MASTER_URL}/rest/v1/containers',
+            data=payload2,
+            headers={
+                'apikey': MASTER_KEY,
+                'Authorization': f'Bearer {MASTER_KEY}',
+                'Content-Type': 'application/json'
+            }, method='POST'
+        )
+        urllib.request.urlopen(req2)
+    except Exception as e:
+        print(f'[MASTER] Erro ao registrar: {e}')
+
+def criar_cliente(nome, email, plano='starter'):
+    # Gera slug do email completo (sem @, . e domínio vira parte do slug)
+    base_slug = re.sub(r'[^a-z0-9]', '', email.lower())[:20]
+    slug = base_slug
+    # Garante unicidade mesmo com race condition
+    attempt = 0
+    while os.path.exists(f'{CLIENTES_DIR}/{slug}') or _slug_exists_master(slug):
+        attempt += 1
+        slug = base_slug[:16] + secrets.token_hex(2)
+        if attempt > 10:
+            slug = secrets.token_hex(8)
+            break
+
+    db_pass     = secrets.token_urlsafe(20)
+    jwt_secret  = secrets.token_urlsafe(32)
+    admin_senha = secrets.token_urlsafe(10)
+    admin_hash  = gerar_hash(admin_senha)
+    anon_jwt    = gerar_jwt(jwt_secret)
+    pasta       = f'{CLIENTES_DIR}/{slug}'
+    os.makedirs(pasta, exist_ok=True)
+
+    for f in ['Dockerfile', 'nginx.conf', 'entrypoint.sh', 'lista-compras-saas.html']:
+        shutil.copy(f'/home/ubuntu/orchestrator/templates/{f}', pasta)
+
+    schema = open('/home/ubuntu/orchestrator/templates/schema.sql').read()
+    schema = (schema
+        .replace('{{NOME}}',       nome)
+        .replace('{{PLANO}}',      plano)
+        .replace('{{ADMIN_HASH}}', admin_hash)
+        .replace('{{DB_PASS}}',    db_pass))
+    with open(f'{pasta}/schema.sql', 'w') as fh:
+        fh.write(schema)
+
+    compose = f"""services:
+  nginx:
+    build: .
+    container_name: {slug}
+    restart: always
+    environment:
+      - SUPABASE_URL=https://{slug}.{DOMAIN}
+      - SUPABASE_KEY={anon_jwt}
+      - CLIENTE_ID={slug}
+      - PLANO={plano}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+      - "traefik.http.routers.{slug}.rule=Host(`{slug}.{DOMAIN}`)"
+      - "traefik.http.routers.{slug}.entrypoints=websecure"
+      - "traefik.http.routers.{slug}.tls.certresolver=letsencrypt"
+      - "traefik.http.services.{slug}.loadbalancer.server.port=80"
+    networks:
+      - traefik_proxy
+      - {slug}_internal
+  postgres:
+    image: postgres:16-alpine
+    container_name: {slug}-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB={slug}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD={db_pass}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - {slug}_internal
+  postgrest:
+    image: postgrest/postgrest
+    container_name: {slug}-postgrest
+    restart: always
+    environment:
+      - PGRST_DB_URI=postgres://authenticator:{db_pass}@postgres:5432/{slug}
+      - PGRST_DB_SCHEMA=public
+      - PGRST_DB_ANON_ROLE=anon
+      - PGRST_JWT_SECRET={jwt_secret}
+    depends_on:
+      - postgres
+    networks:
+      - {slug}_internal
+networks:
+  traefik_proxy:
+    external: true
+  {slug}_internal:
+    driver: bridge
+"""
+    with open(f'{pasta}/docker-compose.yml', 'w') as fh:
+        fh.write(compose)
+
+    resultado = subprocess.run(
+        ['docker', 'compose', 'up', '-d', '--build'],
+        cwd=pasta, capture_output=True, text=True
+    )
+
+    url = f'https://{slug}.{DOMAIN}'
+    # Log seguro de criação (senha em texto para recuperação)
+    log_entry = {
+        'ts': datetime.now().isoformat(),
+        'slug': slug, 'nome': nome, 'email': email,
+        'plano': plano, 'url': url, 'admin_senha': admin_senha
+    }
+    log_path = '/home/ubuntu/clientes/.criacao_log.json'
+    try:
+        logs = []
+        if os.path.exists(log_path):
+            with open(log_path) as lf:
+                logs = json.load(lf)
+        logs.append(log_entry)
+        with open(log_path, 'w') as lf:
+            json.dump(logs, lf, indent=2, ensure_ascii=False)
+        os.chmod(log_path, 0o600)  # só root/ubuntu lê
+    except Exception as e:
+        print(f'[LOG] Erro ao salvar log: {e}')
+    registrar_master(slug, nome, email, plano, slug, slug)
+
+    # Envia email de boas-vindas com credenciais
+    enviar_email_boas_vindas(nome, email, url, admin_senha)
+
+    return {
+        'ok': True, 'cliente_id': slug,
+        'url': url,
+        'login': 'admin', 'senha': admin_senha, 'plano': plano
+    }
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({'ok': True})
+
+@app.route('/enviar-email', methods=['POST'])
+def enviar_email_endpoint():
+    data = request.json or {}
+    to_email = data.get('to_email', '')
+    to_name  = data.get('to_name', '')
+    subject  = data.get('subject', '')
+    html     = data.get('html', '')
+    if not to_email or not subject or not html:
+        return jsonify({'erro': 'to_email, subject e html obrigatorios'}), 400
+    resultado = subprocess.run(
+        ['python3', '/host/send_email.py', json.dumps({
+            'email': to_email,
+            'subject': subject,
+            'html': html
+        })],
+        capture_output=True, text=True
+    )
+    ok = 'OK' in resultado.stdout
+    return jsonify({'ok': ok, 'log': resultado.stdout + resultado.stderr})
+
+@app.route('/buscar-cliente', methods=['POST'])
+def buscar_cliente():
+    data = request.json or {}
+    email = data.get('email', '')
+    if not email:
+        return jsonify({'erro': 'email obrigatorio'}), 400
+    slug = re.sub(r'[^a-z0-9]', '', email.lower())[:20]
+    pasta = f'{CLIENTES_DIR}/{slug}'
+    if os.path.exists(pasta):
+        return jsonify({'ok': True, 'url': f'https://{slug}.{DOMAIN}', 'cliente_id': slug})
+    return jsonify({'ok': False})
+
+@app.route('/criar-cliente', methods=['POST'])
+def criar_manual():
+    data = request.json or {}
+    if not data.get('nome') or not data.get('email'):
+        return jsonify({'erro': 'nome e email obrigatórios'}), 400
+    # Verifica se já existe
+    email = data['email']
+    slug = re.sub(r'[^a-z0-9]', '', email.lower())[:20]
+    if os.path.exists(f'{CLIENTES_DIR}/{slug}'):
+        return jsonify({'ok': True, 'url': f'https://{slug}.{DOMAIN}', 'cliente_id': slug, 'existente': True})
+    return jsonify(criar_cliente(data['nome'], email, data.get('plano','starter')))
+
+@app.route('/webhook/lemonsqueezy', methods=['POST'])
+def webhook_lemon():
+    sig      = request.headers.get('X-Signature', '')
+    body     = request.get_data()
+    expected = hmac.new(WEBHOOK_SECRET.encode(), body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        return jsonify({'erro': 'assinatura inválida'}), 401
+    data  = request.json
+    event = data.get('meta', {}).get('event_name', '')
+    if event in ('order_created', 'subscription_created'):
+        attrs   = data['data']['attributes']
+        email   = attrs.get('user_email', '')
+        nome    = attrs.get('user_name', email)
+        variant = attrs.get('variant_name', '').lower()
+        plano   = 'gold' if 'gold' in variant else 'pro' if 'pro' in variant else 'starter'
+        print(f'[WEBHOOK] Criando cliente: {email} plano={plano}')
+        criar_cliente(nome, email, plano)
+    return jsonify({'ok': True})
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)

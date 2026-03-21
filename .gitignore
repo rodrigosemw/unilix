@@ -1,0 +1,9 @@
+# dados de clientes (CRÍTICO)
+clientes/
+
+# bancos e volumes
+**/pgdata/
+*.db
+# traefik ssl
+traefik/letsencrypt/
+*.json
