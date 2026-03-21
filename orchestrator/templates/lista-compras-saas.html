@@ -766,18 +766,7 @@ async function _dbDeleteIn(table, field, values) {
   return {error: r.ok ? null : await r.json()};
 }
 // ── Fim helpers ────────────────────────────────────────────────
-  auth: {
-    storage: _sbStorage,
-    persistSession: false,   // app usa senha própria, não sessão supabase
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-  },
-  realtime: { params: { eventsPerSecond: -1 } },
-  global: {
-    fetch: (...args) => fetch(...args),  // usa fetch nativo da página
-  },
-});
-
+  
 // ══════════════════════════════════════
 // SENHA — hash e verificação (bcrypt)
 // ══════════════════════════════════════
