@@ -717,6 +717,13 @@ const api = (path, opts={}) => fetch('/rest/v1/'+path, {
 }).then(r => r.ok || r.status===201 ? r.json().catch(()=>[]) : r.json().then(e=>{throw e;}));
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    storage: _sbStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 // ── Helper: substitui sb.from() por fetch direto ──────────────
 const _H = () => ({'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json'});
