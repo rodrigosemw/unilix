@@ -519,7 +519,7 @@ def criar_cliente_pdv(nome, email, plano='starter', subdominio_escolhido=None, s
     admin_hash  = gerar_hash(admin_senha)
     anon_jwt    = gerar_jwt(jwt_secret)
     pasta       = f'{CLIENTES_DIR}/{slug}'
-    os.makedirs(pasta, exist_ok=True
+    os.makedirs(pasta, exist_ok=True)
 
     for f in ['Dockerfile', 'entrypoint.sh', 'comanda-facil.html']:
         shutil.copy(f'{pdv_tpl}/{f}', pasta)
