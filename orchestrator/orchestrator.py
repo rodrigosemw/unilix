@@ -274,7 +274,7 @@ def criar_cliente(nome, email, plano='starter', subdominio_escolhido=None, senha
         shutil.copy(f'{tpl}/contagem.html', pasta)
         dockerfile_lines.append('COPY contagem.html /tmp/contagem.html')
     # Módulo PDV
-pdv_tpl = str(Path(tpl) / 'pdv')
+    pdv_tpl = str(Path(tpl) / 'pdv')
     if 'pdv' in modulos and os.path.exists(f'{pdv_tpl}/comanda-facil.html'):
         shutil.copy(f'{pdv_tpl}/comanda-facil.html', f'{pasta}/comanda-facil.html')
         dockerfile_lines.append('COPY comanda-facil.html /tmp/comandafacil.html')
