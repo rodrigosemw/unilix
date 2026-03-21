@@ -3,6 +3,7 @@ import threading
 from flask_cors import CORS
 import subprocess, os, secrets, hmac, hashlib, base64, json, shutil, re, urllib.request
 from datetime import datetime
+from pathlib import Path
 
 app = Flask(__name__)
 CORS(app)
@@ -250,7 +251,8 @@ def criar_cliente(nome, email, plano='starter', subdominio_escolhido=None, senha
     admin_hash  = admin_senha  # Hub compara texto puro; ListaFácil faz hash no 1º login
     anon_jwt    = gerar_jwt(jwt_secret)
     pasta       = f'{CLIENTES_DIR}/{slug}'
-    tpl         = '/home/ubuntu/orchestrator/templates'
+    BASE_DIR = Path(__file__).resolve().parent
+    tpl = str(BASE_DIR / 'templates')
     os.makedirs(pasta, exist_ok=True)
 
     # Copia arquivos base
@@ -272,7 +274,7 @@ def criar_cliente(nome, email, plano='starter', subdominio_escolhido=None, senha
         shutil.copy(f'{tpl}/contagem.html', pasta)
         dockerfile_lines.append('COPY contagem.html /tmp/contagem.html')
     # Módulo PDV
-    pdv_tpl = f'{tpl}/pdv'
+pdv_tpl = str(Path(tpl) / 'pdv')
     if 'pdv' in modulos and os.path.exists(f'{pdv_tpl}/comanda-facil.html'):
         shutil.copy(f'{pdv_tpl}/comanda-facil.html', f'{pasta}/comanda-facil.html')
         dockerfile_lines.append('COPY comanda-facil.html /tmp/comandafacil.html')
@@ -517,9 +519,8 @@ def criar_cliente_pdv(nome, email, plano='starter', subdominio_escolhido=None, s
     admin_hash  = gerar_hash(admin_senha)
     anon_jwt    = gerar_jwt(jwt_secret)
     pasta       = f'{CLIENTES_DIR}/{slug}'
-    os.makedirs(pasta, exist_ok=True)
+    os.makedirs(pasta, exist_ok=True
 
-    pdv_tpl = '/home/ubuntu/orchestrator/templates/pdv'
     for f in ['Dockerfile', 'entrypoint.sh', 'comanda-facil.html']:
         shutil.copy(f'{pdv_tpl}/{f}', pasta)
 
