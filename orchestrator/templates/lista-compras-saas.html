@@ -639,23 +639,33 @@ async function flushQueue() {
   }
 }
 
+// ── Upsert via fetch direto ──
+async function _dbUpsert(table, data, conflict='id') {
+  const r = await fetch('/rest/v1/' + table + '?on_conflict=' + encodeURIComponent(conflict), {
+    method: 'POST',
+    headers: {..._H(), 'Prefer': 'resolution=merge-duplicates,return=minimal', 'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  });
+  return {error: r.ok ? null : await r.json()};
+}
+
 async function _execQueueOp(op) {
   const { table, action, payload, eq_field, eq_value, conflict } = op;
-  let q = sb.from(table);
-  if      (action === 'insert') await q.insert(payload);
-  else if (action === 'update') await q.update(payload).eq(eq_field, eq_value);
-  else if (action === 'delete') await q.delete().eq(eq_field, eq_value);
-  else if (action === 'upsert') await q.upsert(payload, { onConflict: conflict || 'id' });
+  if      (action === 'insert') await _dbInsert(table, payload);
+  else if (action === 'update') await _dbUpdate(table, payload, {[eq_field]: eq_value});
+  else if (action === 'delete') await _dbDelete(table, {[eq_field]: eq_value});
+  else if (action === 'upsert') await _dbUpsert(table, payload, conflict || 'id');
 }
 
 // ── Wrapper: faz operação se online, enfileira se offline ──
 async function sbWrite({ table, action, payload, eq_field, eq_value, conflict }) {
-  if (_isOnline) {
-    let q = sb.from(table);
-    if      (action === 'insert') return await q.insert(payload);
-    else if (action === 'update') return await q.update(payload).eq(eq_field, eq_value);
-    else if (action === 'delete') return await q.delete().eq(eq_field, eq_value);
-    else if (action === 'upsert') return await q.upsert(payload, { onConflict: conflict || 'id' });
+  // Usa fetch direto — sb.from() é stub e não persiste dados
+  if (navigator.onLine) {
+    if      (action === 'insert') return await _dbInsert(table, payload);
+    else if (action === 'update') return await _dbUpdate(table, payload, {[eq_field]: eq_value});
+    else if (action === 'delete') return await _dbDelete(table, {[eq_field]: eq_value});
+    else if (action === 'upsert') return await _dbUpsert(table, payload, conflict || 'id');
+    return {data: null, error: 'ação desconhecida'};
   } else {
     queueAdd({ table, action, payload, eq_field, eq_value, conflict });
     return { data: payload, error: null }; // otimista
@@ -1936,8 +1946,10 @@ async function openSubmissionDetail(subId) {
   // CORREÇÃO: s\u00F3 aplica checked_items cujo item_id pertence a esta lista
   const validItemIds = new Set((_curSub.items||[]).map(i=>String(i.id)));
   (checksRes.data||[]).filter(r=>validItemIds.has(String(r.item_id))).forEach(r => {
-    _curSub.checkedState[r.item_id] = !!r.checked;
-    _curSub.checkedNames[r.item_id] = { name: r.checked_name||'', by: r.checked_by||'' };
+    // Normaliza chave como String para evitar mismatch numérico/string
+    const key = String(r.item_id);
+    _curSub.checkedState[key] = !!r.checked;
+    _curSub.checkedNames[key] = { name: r.checked_name||'', by: r.checked_by||'' };
   });
   const isCompleted = _curSub.status === 'concluida';
   const isReceiver = (_curSub.sent_to||[]).includes(CU.login);
@@ -1961,7 +1973,7 @@ async function openSubmissionDetail(subId) {
         <div id="subItemsRender"></div>
       </div>
     </div>
-    ${!isCompleted?`<div class="bottom-bar">
+    ${!isCompleted?`<div class="bottom-bar" id="ldBottomBar">
       <button class="btn-icon-bar" onclick="generatePDF('${subId}')" title="PDF">📄</button>
       <button class="btn-icon-bar" onclick="openShareList('${subId}')" title="Repassar" style="font-size:15px">🔗 Repassar</button>
       ${canComplete?`<button class="btn-complete" onclick="completeSubmission('${subId}')">✅ Concluir</button>`:''}
@@ -2020,9 +2032,9 @@ function renderDetailItems() {
       </div>
       <div class="cat-items-wrap ${collapsed?'collapsed':''}" style="max-height:${collapsed?'0':'2000px'}">
       ${catItems.map(item=>{
-        const isChecked = !!cs[item.id];
+        const isChecked = !!(cs[item.id] ?? cs[String(item.id)] ?? cs[Number(item.id)]);
         const isUrgent = !!item.urgent;
-        const nameInfo = names[item.id]||{};
+        const nameInfo = names[item.id] || names[String(item.id)] || names[Number(item.id)] || {};
         const byName = nameInfo.name||nameInfo.by||'';
         return `<div class="item-row ${isChecked?'checked':''} ${isUrgent&&!isChecked?'urgent':''}" id="irow_${item.id}">
           ${isCompleted
@@ -2052,9 +2064,11 @@ async function toggleCheck(subId, itemId) {
   if (!_curSub || _curSub.status === 'concluida') return;
   if (!_curSub.checkedState) _curSub.checkedState = {};
   if (!_curSub.checkedNames) _curSub.checkedNames = {};
-  const nowChecked = !_curSub.checkedState[itemId];
-  _curSub.checkedState[itemId] = nowChecked;
-  _curSub.checkedNames[itemId] = { name: CU.nome, by: CU.login };
+  const key = String(itemId); // normaliza tipo para evitar mismatch
+  const nowChecked = !_curSub.checkedState[key];
+  _curSub.checkedState[key] = nowChecked;
+  _curSub.checkedNames[key] = { name: CU.nome, by: CU.login };
+  _setWriting(key); // protege este item do poll por 2s
   renderDetailItems();
   const upsertPayload = {submission_id:subId,item_id:itemId,checked:nowChecked,checked_by:CU.login,checked_name:CU.nome,updated_at:new Date().toISOString()};
   try {
@@ -2062,7 +2076,7 @@ async function toggleCheck(subId, itemId) {
     if (res.error) throw res.error;
     if (!_isOnline) toast('Salvo localmente — sincronizará ao reconectar','info');
   } catch(e) {
-    _curSub.checkedState[itemId] = !nowChecked; renderDetailItems(); toast('Erro ao salvar','error'); return;
+    _curSub.checkedState[key] = !nowChecked; renderDetailItems(); toast('Erro ao salvar','error'); return;
   }
   // Propagar para lista m\u00E3e e listas irm\u00E3s (repasses da mesma origem)
   // CORREÇÃO: s\u00F3 propaga se o item_id existir na lista de destino
@@ -2082,104 +2096,93 @@ async function toggleCheck(subId, itemId) {
     }
   } catch(e) { /* sync falhou silenciosamente */ }
   const items = _curSub.items||[];
-  const allChecked = items.length > 0 && items.every(i=>!!_curSub.checkedState[i.id]);
-  if (allChecked && document.getElementById('checkoutBtnWrap')) {
-    const btnWrap = document.getElementById('checkoutBtnWrap');
-    if(btnWrap.style.bottom !== '0px') {
-       btnWrap.style.display = 'block';
-       document.getElementById('ldBottomBar').style.display = 'none';
-       setTimeout(() => { btnWrap.style.bottom = '0px'; }, 50);
-    }
-  } else if (!allChecked && document.getElementById('checkoutBtnWrap')) {
-    const btnWrap = document.getElementById('checkoutBtnWrap');
-    if(btnWrap.style.bottom === '0px') {
-       btnWrap.style.bottom = '-200px';
-       setTimeout(() => { 
-         const bb=document.getElementById('ldBottomBar'); 
-         if(bb) bb.style.display=''; 
-       }, 400);
+  const allChecked = items.length > 0 && items.every(i=>!!_curSub.checkedState[String(i.id)]);
+  // Quando todos marcados: destaca o botão Concluir sem esconder a barra
+  const ldBar = document.getElementById('ldBottomBar');
+  if (ldBar) {
+    const btnComplete = ldBar.querySelector('.btn-complete');
+    if (btnComplete) {
+      if (allChecked) {
+        btnComplete.style.animation = 'checkPop .3s ease';
+        btnComplete.style.boxShadow = '0 0 0 3px var(--accent)';
+      } else {
+        btnComplete.style.animation = '';
+        btnComplete.style.boxShadow = '';
+      }
     }
   }
 }
 
 function setupSubRealtime(subId) {
-  if (window._subRt) { try { sb.removeChannel(window._subRt); } catch(e){} window._subRt=null; }
+  // sb.channel() é stub — realtime via WebSocket não disponível
+  // Sincronização via poll (startDetailPoll) já cobre o caso
   if (window._rtHeartbeat) { clearInterval(window._rtHeartbeat); window._rtHeartbeat=null; }
-  let _lastRtEvent = Date.now();
-  try {
-    window._subRt = sb.channel('lf-'+subId.slice(-8)+'-'+Date.now())
-      .on('postgres_changes',{event:'*',schema:'public',table:'checked_items'},payload=>{
-        _lastRtEvent = Date.now();
-        const row = payload.new || payload.old;
-        if (!row || String(row.submission_id) !== String(_curSubId) || !_curSub) return;
-        // CORREÇÃO: s\u00F3 aplica se o item_id pertence a esta lista
-        const itemBelongs = (_curSub.items||[]).some(i=>String(i.id)===String(row.item_id));
-        if (!itemBelongs) return;
-        if (!_curSub.checkedState) _curSub.checkedState = {};
-        if (!_curSub.checkedNames) _curSub.checkedNames = {};
-        if (payload.eventType === 'DELETE') { _curSub.checkedState[row.item_id] = false; }
-        else { _curSub.checkedState[row.item_id] = !!row.checked; _curSub.checkedNames[row.item_id] = {name:row.checked_name||'',by:row.checked_by||''}; }
-        renderDetailItems();
-        if (row.checked_by && row.checked_by !== CU.login) { toast(`${!!row.checked?'✅':'⬜'} ${esc(row.checked_name||row.checked_by)} ${!!row.checked?'marcou':'desmarcou'} um item`,'info'); }
-      })
-      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'list_submissions'},payload=>{
-        _lastRtEvent = Date.now();
-        const row = payload.new;
-        if (!row || String(row.id) !== String(_curSubId)) return;
-        if (row.status === 'concluida' && _curSub) { _curSub.status = 'concluida'; toast('Lista concluída!','success'); setTimeout(()=>{closeLD(); loadAllLists().then(()=>renderTab());},1800); }
-      })
-      .subscribe(status=>{
-        _lastRtEvent = Date.now();
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { setTimeout(()=>{ if(_curSubId) setupSubRealtime(_curSubId); },5000); }
-      });
-    window._rtHeartbeat = setInterval(()=>{
-      if (!_curSubId || !document.getElementById('ldPanel')) { clearInterval(window._rtHeartbeat); window._rtHeartbeat=null; return; }
-      if (Date.now() - _lastRtEvent > 60000) { setupSubRealtime(_curSubId); }
-    },30000);
-  } catch(e) {}
 }
+
+// Flag para evitar que o poll/visibilitychange sobrescreva uma escrita local ainda não confirmada
+let _writingItem = null;
+let _writingTimer = null;
+let _lastWriteTs = 0;
+function _setWriting(itemId) {
+  _writingItem = String(itemId);
+  _lastWriteTs = Date.now();
+  if (_writingTimer) clearTimeout(_writingTimer);
+  _writingTimer = setTimeout(() => { _writingItem = null; }, 5000); // janela de 5s para celular
+}
+function _recentlyWrote() { return Date.now() - _lastWriteTs < 5000; }
 
 const _isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 function startDetailPoll(subId) {
   if (_detailPollTimer) clearInterval(_detailPollTimer);
+  const interval = _isMobile ? 2000 : 3000;
   _detailPollTimer = setInterval(async()=>{
     if (!document.getElementById('ldPanel')) { clearInterval(_detailPollTimer); _detailPollTimer=null; return; }
-    const {data:rows} = await fetch('/rest/v1/checked_items?select=item_id,checked,checked_by,checked_name&submission_id=eq.'+subId,{headers:_H()}).then(r=>r.json()).then(d=>({data:Array.isArray(d)?d:[]}));
-    if (!rows||!_curSub) return;
-    // CORREÇÃO: s\u00F3 aplica linhas cujo item_id existe nesta submission
+    const rows = await fetch('/rest/v1/checked_items?select=item_id,checked,checked_by,checked_name&submission_id=eq.'+subId,{headers:_H()}).then(r=>r.json()).catch(()=>[]);
+    if (!Array.isArray(rows)||!_curSub) return;
     const validIds = new Set((_curSub.items||[]).map(i=>String(i.id)));
     let changed = false;
     rows.filter(r=>validIds.has(String(r.item_id))).forEach(r=>{
-      const prev = !!(_curSub.checkedState||{})[r.item_id];
-      if (prev !== !!r.checked) changed = true;
+      const pollKey = String(r.item_id);
+      if (pollKey === _writingItem) return; // ignora item sendo escrito localmente
       if (!_curSub.checkedState) _curSub.checkedState = {};
       if (!_curSub.checkedNames) _curSub.checkedNames = {};
-      _curSub.checkedState[r.item_id] = !!r.checked;
-      _curSub.checkedNames[r.item_id] = {name:r.checked_name||'',by:r.checked_by||''};
+      const prev = !!_curSub.checkedState[pollKey];
+      const next = !!r.checked;
+      if (prev !== next) {
+        changed = true;
+        if (r.checked_by && r.checked_by !== CU.login) {
+          toast(`${next?'✅':'⬜'} ${esc(r.checked_name||r.checked_by)} ${next?'marcou':'desmarcou'} um item`,'info');
+        }
+      }
+      _curSub.checkedState[pollKey] = next;
+      _curSub.checkedNames[pollKey] = {name:r.checked_name||'',by:r.checked_by||''};
     });
     if (changed) renderDetailItems();
-  }, _isMobile ? 3000 : 8000);
+  }, interval);
 }
 
 document.addEventListener('visibilitychange',()=>{
   if (!document.hidden && _curSubId && _curSub) {
-    fetch('/rest/v1/checked_items?select=*&submission_id=eq.'+_curSubId,{headers:_H()}).then(r=>r.json()).then(rows=>{const data=Array.isArray(rows)?rows:[]; return {data};}).then(({data:rows})=>{
-      if (!rows||!_curSub) return;
+    if (_recentlyWrote()) return; // não sobrescreve se usuário acabou de marcar
+    fetch('/rest/v1/checked_items?select=*&submission_id=eq.'+_curSubId,{headers:_H()}).then(r=>r.json()).then(rows=>{
+      if (!Array.isArray(rows)||!_curSub) return;
       const validIds = new Set((_curSub.items||[]).map(i=>String(i.id)));
       let changed = false;
       rows.filter(r=>validIds.has(String(r.item_id))).forEach(r=>{
-        const prev = !!(_curSub.checkedState||{})[r.item_id];
+        const vcKey = String(r.item_id);
+        if (vcKey === _writingItem) return;
+        const prev = !!(_curSub.checkedState||{})[vcKey];
         if (prev !== !!r.checked) changed = true;
-        _curSub.checkedState[r.item_id] = !!r.checked;
-        _curSub.checkedNames[r.item_id] = {name:r.checked_name||'',by:r.checked_by||''};
+        _curSub.checkedState[vcKey] = !!r.checked;
+        _curSub.checkedNames[vcKey] = {name:r.checked_name||'',by:r.checked_by||''};
       });
       if (changed) renderDetailItems();
     });
-    if (_isMobile && _curSubId) setupSubRealtime(_curSubId);
   }
 });
 
 async function completeSubmission(subId) {
+  if (!(await customConfirm('Concluir lista? Esta ação encerrará a compra para todos.'))) return;
   const {data:sub}=await fetch('/rest/v1/list_submissions?select=titulo,submitted_by,sent_to&id=eq.'+subId+'&limit=1',{headers:_H()}).then(r=>r.json()).then(d=>({data:Array.isArray(d)&&d.length?d[0]:null}));
   await _dbUpdate('list_submissions',{status:'concluida',completed_by:CU.login,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()},{id:subId});
   const everyone=[...new Set([...(sub.sent_to||[]),sub.submitted_by])].filter(l=>l!==CU.login);
