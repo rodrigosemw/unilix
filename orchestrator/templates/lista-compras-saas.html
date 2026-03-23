@@ -1610,7 +1610,8 @@ async function openUserList(templateId) {
     </div>
     <div class="bottom-bar">
       <div id="fillCounter" style="align-self:center;font-size:12px;color:var(--muted);white-space:nowrap">0 selecionados</div>
-      <button class="btn-complete" onclick="submitList('${templateId}')">📤 Enviar Lista</button>
+      <button id="btnEnviarLista" class="btn-complete" onclick="submitList('${templateId}')">📤 Enviar Lista</button>      
+
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
@@ -1651,6 +1652,14 @@ function toggleFillSort(templateId) {
     if(st===1){row.classList.add('selected');cb.classList.add('selected');cb.textContent='✓';const qi=document.getElementById('qtyinput_'+id);if(qi){qi.style.opacity='1';qi.style.pointerEvents='auto';}}
     else if(st===2){row.classList.add('urgent');cb.classList.add('urgent');cb.textContent='🔴';}
   });
+}
+function normalizarNomeItem(nome) {
+  return (nome || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 function renderFillItems(approvedItems, templateId) {
@@ -1860,7 +1869,9 @@ async function submitList(templateId) {
 // ══════════════════════════════════════
 function openSuggestItem(templateId) {
   const tmpl=(myTemplateLists.find(t=>t.id===templateId)||templateLists.find(t=>t.id===templateId));
-  const existingNames=(tmpl?.items||[]).map(i=>i.nome.toLowerCase().trim());
+  const novo = normalizarNomeItem(nome);
+  const existingNames = (tmpl?.items || []).map(i => normalizarNomeItem(i.nome));
+  if (existingNames.includes(novo)) { toast('Já existe um item com este nome','error'); return; }  
   const html=`<div class="overlay center" id="suggestOv" onclick="if(event.target===this)closeModal('suggestOv')">
     <div class="modal center-modal">
       <button class="modal-close" onclick="closeModal('suggestOv')">✕</button>
@@ -4960,3 +4971,21 @@ WHERE workspace_id IS NOT NULL;
 
 
 
+<style>
+#btnEnviarLista {
+  position: relative !important;
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+
+.bottom-bar {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+
+.bottom-bar * {
+  pointer-events: auto !important;
+}
+</style>
