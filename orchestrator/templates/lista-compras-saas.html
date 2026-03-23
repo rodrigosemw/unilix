@@ -699,8 +699,8 @@ function getWorkspaceFromURL() {
   return new URLSearchParams(location.search).get('w');
 }
 
-const SUPABASE_URL = '__SUPABASE_URL__';
-const SUPABASE_KEY = '__SUPABASE_KEY__';
+const SUPABASE_URL = 'https://mexicanaporto.unilix.tech';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.y_0N1uIHunfbuNxZsbetRWBdQJXpjHuz0QQPcW33bvQ';
 
 // Custom storage para contornar Tracking Prevention do Edge
 // Usa o localStorage do contexto da página (não do CDN cross-origin)
@@ -1397,7 +1397,7 @@ function _getOnlineUsers(excludeSelf) {
 function _refreshAdminPresence() {
   const box = document.getElementById('adminPresenceBox');
   if (!box) return;
-  const online = _getOnlineUsers(false);
+  const oWnline = _getOnlineUsers(false);
   const now = Date.now();
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -1610,8 +1610,7 @@ async function openUserList(templateId) {
     </div>
     <div class="bottom-bar">
       <div id="fillCounter" style="align-self:center;font-size:12px;color:var(--muted);white-space:nowrap">0 selecionados</div>
-      <button id="btnEnviarLista" class="btn-complete" onclick="submitList('${templateId}')">📤 Enviar Lista</button>      
-
+      <button id="btnEnviarLista" class="btn-complete" onclick="submitList('${templateId}')">📤 Enviar Lista</button>
     </div>
   </div>`;
   document.body.insertAdjacentHTML('beforeend',html);
@@ -1652,14 +1651,6 @@ function toggleFillSort(templateId) {
     if(st===1){row.classList.add('selected');cb.classList.add('selected');cb.textContent='✓';const qi=document.getElementById('qtyinput_'+id);if(qi){qi.style.opacity='1';qi.style.pointerEvents='auto';}}
     else if(st===2){row.classList.add('urgent');cb.classList.add('urgent');cb.textContent='🔴';}
   });
-}
-function normalizarNomeItem(nome) {
-  return (nome || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ');
 }
 
 function renderFillItems(approvedItems, templateId) {
@@ -1869,9 +1860,7 @@ async function submitList(templateId) {
 // ══════════════════════════════════════
 function openSuggestItem(templateId) {
   const tmpl=(myTemplateLists.find(t=>t.id===templateId)||templateLists.find(t=>t.id===templateId));
-  const novo = normalizarNomeItem(nome);
-  const existingNames = (tmpl?.items || []).map(i => normalizarNomeItem(i.nome));
-  if (existingNames.includes(novo)) { toast('Já existe um item com este nome','error'); return; }  
+  const existingNames=(tmpl?.items||[]).map(i=>i.nome.toLowerCase().trim());
   const html=`<div class="overlay center" id="suggestOv" onclick="if(event.target===this)closeModal('suggestOv')">
     <div class="modal center-modal">
       <button class="modal-close" onclick="closeModal('suggestOv')">✕</button>
@@ -4633,7 +4622,7 @@ async function openSuperAdminPanel() {
   const userCount={};
   (users||[]).forEach(u=>{userCount[u.workspace_id]=(userCount[u.workspace_id]||0)+1;});
   const saBody=document.getElementById('saBody');
-  const planLabels={'starter':'🆓 Starter','free':'🆓 Starter','free':'✅ PRO','__PLANO__':'👑 Gold','paused':'⏸ Pausado'};
+  const planLabels={'starter':'🆓 Starter','free':'🆓 Starter','free':'✅ PRO','pro':'👑 Gold','paused':'⏸ Pausado'};
   // Calcula receita: soma dos monthly_price de workspaces pagos (não starter/free, não paused)
   const receita = (workspaces||[]).reduce((acc,ws)=>{
     if(ws.plan==='starter'||ws.plan==='free'||ws.plan==='paused') return acc;
@@ -4667,7 +4656,7 @@ async function openSuperAdminPanel() {
             <select onchange="changeWorkspacePlan('${ws.id}',this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 8px;font-size:12px;cursor:pointer;color:var(--text)">
               <option value="starter" ${ws.plan==='starter'||ws.plan==='free'?'selected':''}>🆓 Starter</option>
               <option value="pro" ${ws.plan==='free'?'selected':''}>✅ Pro</option>
-              <option value="gold" ${ws.plan==='__PLANO__'?'selected':''}>👑 Gold</option>
+              <option value="gold" ${ws.plan==='pro'?'selected':''}>👑 Gold</option>
               <option value="paused" ${ws.plan==='paused'?'selected':''}>\u23F8 Pausar</option>
             </select>
             <input type="number" placeholder="R$ mensal" value="${ws.monthly_price||''}"
@@ -4682,7 +4671,7 @@ async function openSuperAdminPanel() {
       <div class="sa-summary-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;text-align:center">
         <div><div style="font-size:20px;font-weight:700;color:var(--muted)">${(workspaces||[]).filter(w=>w.plan==='starter'||w.plan==='free').length}</div><div style="font-size:11px;color:var(--muted)">Starter</div></div>
         <div><div style="font-size:20px;font-weight:700;color:var(--accent)">${(workspaces||[]).filter(w=>w.plan==='free').length}</div><div style="font-size:11px;color:var(--muted)">Pro</div></div>
-        <div><div style="font-size:20px;font-weight:700;color:#ffd166">${(workspaces||[]).filter(w=>w.plan==='__PLANO__').length}</div><div style="font-size:11px;color:var(--muted)">Gold</div></div>
+        <div><div style="font-size:20px;font-weight:700;color:#ffd166">${(workspaces||[]).filter(w=>w.plan==='pro').length}</div><div style="font-size:11px;color:var(--muted)">Gold</div></div>
         <div><div style="font-size:20px;font-weight:700;color:var(--danger)">${(workspaces||[]).filter(w=>w.plan==='paused').length}</div><div style="font-size:11px;color:var(--muted)">Pausados</div></div>
         <div><div style="font-size:20px;font-weight:700">${(workspaces||[]).length}</div><div style="font-size:11px;color:var(--muted)">Total</div></div>
         <div><div style="font-size:20px;font-weight:700;color:var(--accent)">R$${receita.toFixed(0)}</div><div style="font-size:11px;color:var(--muted)">Receita/m\u00EAs</div></div>
@@ -4699,7 +4688,7 @@ function saToast(msg) {
 
 async function changeWorkspacePlan(wsId, newPlan) {
   await _dbUpdate('workspaces',{plan:newPlan},{id:wsId});
-  const labels={'starter':'🆓 Starter ativado','free':'🆓 Starter ativado','free':'✅ Pro ativado','__PLANO__':'👑 Gold ativado','paused':'⏸ Pausado'};
+  const labels={'starter':'🆓 Starter ativado','free':'🆓 Starter ativado','free':'✅ Pro ativado','pro':'👑 Gold ativado','paused':'⏸ Pausado'};
   saToast(labels[newPlan]||'Plano alterado');
   setTimeout(()=>openSuperAdminPanel(),600);
 }
