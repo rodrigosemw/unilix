@@ -4,7 +4,7 @@ services:
     container_name: orchestrator
     restart: always
     environment:
-      - CLIENTES_DIR=/home/ubuntu/clientes
+      - - CLIENTES_DIR=/clientes
       - DOMAIN=unilix.tech
       - WEBHOOK_SECRET=webhook-secret-troque-isso
       - RESEND_API_KEY=re_VFXze2q6_BUevQ8N26pWo582BzS9MoN5s
@@ -12,7 +12,7 @@ services:
       - MASTER_URL=https://zlxsbnrtgieclpypztow.supabase.co
       - MASTER_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpseHNibnJ0Z2llY2xweXB6dG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NTEwODQsImV4cCI6MjA4OTIyNzA4NH0.Tg45Vjofb-NMqDtPCTw0pbFmxQbUBotiNAKknrLtSX0
     volumes:
-      - /home/ubuntu/clientes:/home/ubuntu/clientes
+      - /home/ubuntu/app/clientes:/clientes
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/ubuntu/orchestrator/templates:/home/ubuntu/orchestrator/templates
       - /home/ubuntu/send_email.py:/host/send_email.py
